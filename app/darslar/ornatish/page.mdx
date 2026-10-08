@@ -1,0 +1,705 @@
+## Bu darsda nima o‘rganasiz
+
+Oddiy tilda: yangi ish joyiga kelgan dasturchi birinchi kuni kod
+yozmaydi. U kompyuterini sozlaydi, kerakli dasturlarni o‘rnatadi,
+loyihani ochib, qayerda nima turganini o‘rganadi. Birinchi kun yaxshi
+o‘tsa, keyingi oylar ham silliq ketadi.
+
+Bu dars — Claude Code bilan **birinchi kun**. Oxirida sizda:
+
+- to‘g‘ri o‘rnatilgan va yangilanib turadigan Claude Code;
+- o‘zingizga mos muhit (terminal, IDE yoki ilova);
+- birinchi haqiqiy sessiya: o‘rganish, `/init`, kichik funksiya va commit;
+- qaysi fayl nimaga javob berishi va qaysi biri git’ga tushmasligi
+  haqida aniq tasavvur bo‘ladi.
+
+| Savol | Bo‘lim |
+| --- | --- |
+| Qaysi obuna kerak, bepul reja ishlaydimi? | 1 |
+| Qaysi o‘rnatish usuli to‘g‘ri? | 2 |
+| O‘rnatilganini qanday tekshiraman? | 3 |
+| Nega obunam bo‘la turib API’dan pul ketdi? | 4 |
+| Terminalmi, VS Code’mi, ilovami? | 5 |
+| Windows’da nimaga e’tibor berish kerak? | 6 |
+| Birinchi sessiyada nima qilish kerak? | 8 |
+| `/init` nima qiladi? | 9 |
+| Qaysi fayllarni commit qilish kerak? | 10 |
+
+<Callout type="info" title="Vaqtingiz kam bo'lsa — 10 daqiqalik yo'l">
+**2-bo‘lim** (o‘rnatish), **4-bo‘lim** (API kalit tuzog‘i) va **8-bo‘lim**
+(birinchi sessiya). Qolganini kerak bo‘lganda qaytib o‘qiysiz — bu dars
+ma’lumotnoma sifatida ham ishlaydi.
+</Callout>
+
+<Callout type="maslahat" title="Bu dars nimaga tayanadi">
+1-darsdagi aqliy model: agent sikli, kontekst oynasi va tekshiriladigan
+maqsad. Bu yerda ularni birinchi marta **o‘z kompyuteringizda**
+qo‘llaysiz. Buyruqlar va talablar rasmiy hujjatdan olingan (19-bo‘lim).
+Claude Code tez yangilanadi — versiya raqamlari va menyu nomlari biroz
+farq qilishi mumkin.
+</Callout>
+
+## 1. Nima kerak: hisob va kompyuter
+
+Oddiy tilda: Claude Code — bepul ilova emas, u obuna yoki API hisobi
+orqali ishlaydi. Kompyuter talablari esa kamtar.
+
+### 1.1 Hisob
+
+Hujjatga ko‘ra Claude Code uchun quyidagilardan biri kerak:
+
+| Hisob turi | Kimga mos |
+| --- | --- |
+| **Pro** yoki **Max** obunasi | Shaxsiy foydalanish; oylik qat’iy to‘lov, limit ichida |
+| **Team** yoki **Enterprise** | Jamoa va tashkilotlar |
+| **Console** (API hisobi) | Har bir token uchun to‘lov; avtomatlashtirish va CI |
+| Bulut provayderlari | Amazon Bedrock, Google Cloud, Microsoft Foundry orqali |
+
+<Callout type="ogoh" title="Bepul reja ishlamaydi">
+Hujjat aniq aytadi: bepul claude.ai rejasida Claude Code’ga kirish **yo‘q**.
+Bepul akkaunt bilan kirmoqchi bo‘lsangiz, xato chiqadi — bu o‘rnatish
+muammosi emas.
+</Callout>
+
+### 1.2 Kompyuter
+
+| Tizim | Minimal versiya |
+| --- | --- |
+| macOS | 13.0 |
+| Windows | 10 (1809) yoki Server 2019 |
+| Ubuntu | 20.04 |
+| Debian | 10 |
+| Alpine | 3.19 |
+
+Bundan tashqari: kamida **4 GB** operativ xotira va internet. Shell —
+Bash, Zsh, PowerShell yoki CMD.
+
+## 2. O‘rnatish: bitta buyruq
+
+Oddiy tilda: Claude Code’ni o‘rnatishning bir nechta yo‘li bor, lekin
+hujjat bittasini **tavsiya qiladi** — “native” o‘rnatuvchi. U o‘zi
+yangilanib turadi va qo‘shimcha dastur talab qilmaydi.
+
+### 2.1 Tavsiya etilgan usul (native)
+
+macOS, Linux yoki WSL:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Windows CMD:
+
+```bat
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+O‘rnatgandan keyin **yangi terminal** oching — shunda `claude` buyrug‘i
+PATH’da paydo bo‘ladi.
+
+### 2.2 Boshqa usullar
+
+| Usul | Buyruq | Avto-yangilanish |
+| --- | --- | --- |
+| Native (tavsiya) | yuqoridagi skript | Ha, fonda |
+| Homebrew | `brew install --cask claude-code` | Yo‘q |
+| WinGet | `winget install Anthropic.ClaudeCode` | Yo‘q |
+| npm | `npm install -g @anthropic-ai/claude-code` | Qo‘lda |
+| apt, dnf, apk | rasmiy repozitoriylar | Yo‘q |
+
+npm uchun **Node.js 22** yoki undan yangisi kerak. Hujjatdagi qat’iy
+ogohlantirish: **`sudo npm install -g` ishlatmang**. Ruxsat xatosi
+chiqsa — sudo bilan emas, npm sozlamasini tuzatish bilan hal qilinadi
+(12-bo‘lim).
+
+<Check q="Homebrew bilan o'rnatdingiz, bir oydan keyin hamkasbingizda yangi buyruq bor, sizda yo'q. Nega?">
+Homebrew, WinGet va Linux paket menejerlari orqali o‘rnatilgan Claude Code
+standart holatda **o‘zi yangilanmaydi**. Native o‘rnatish esa fonda
+yangilanadi. Yechim: `brew upgrade` (yoki tegishli menejer buyrug‘i) yoki
+native o‘rnatishga o‘tish.
+</Check>
+
+## 3. Tekshirish va yangilash
+
+O‘rnatgandan keyin uchta buyruq bilan holatni tekshiring:
+
+| Buyruq | Nima qiladi |
+| --- | --- |
+| `claude --version` | Versiyani chiqaradi, masalan `2.1.211 (Claude Code)` |
+| `claude doctor` | Sessiya ochmasdan o‘rnatish va sozlamalar diagnostikasi (faqat o‘qiydi) |
+| `claude update` | Yangilanishni hozir tekshiradi va o‘rnatadi |
+
+### 3.1 Yangilanish kanallari
+
+Native o‘rnatish ikki kanaldan birini kuzatadi:
+
+- **`latest`** — standart: yangi versiya chiqishi bilan;
+- **`stable`** — hujjatga ko‘ra odatda taxminan **bir hafta eski**,
+  ya’ni muammolari allaqachon ko‘rilgan versiya.
+
+Ishlab chiqarishga yaqin jamoada `stable` xotirjamroq. Tanlash:
+sessiyada `/config` → avto-yangilanish kanali, yoki sozlamada
+`"autoUpdatesChannel": "stable"`.
+
+<Callout type="maslahat" title="Sessiya ichidagi tekshiruv">
+Sessiya ichida ham ikki foydali buyruq bor: **`/status`** — versiya, model,
+akkaunt va ulanish holati; **`/doctor`** — sozlashni tekshiradi va
+tuzatishlarni taklif qiladi (siz tasdiqlaganingizdan keyin qo‘llanadi).
+</Callout>
+
+## 4. Kirish va API kalit tuzog‘i
+
+Oddiy tilda: Claude Code’ga birinchi marta kirganingizda brauzer ochiladi,
+siz akkauntingiz bilan tasdiqlaysiz — tamom. Lekin bitta yashirin tuzoq
+bor, u ko‘pchilikni pul yo‘qotishga olib keladi.
+
+### 4.1 Kirish
+
+1. Terminalda `claude` ni ishga tushiring.
+2. Brauzer ochiladi; ochilmasa — `c` tugmasi bilan havolani nusxalab,
+   o‘zingiz oching.
+3. Akkauntingizni tanlab tasdiqlang.
+
+Keyin: **`/login`** — akkauntni almashtirish, **`/logout`** — chiqish,
+**`/status`** — hozir qaysi akkaunt bilan ishlayotganingiz.
+
+WSL, SSH yoki konteynerda brauzer boshqa kompyuterda ochiladi. Bunda
+brauzer bergan kodni terminaldagi “Paste code here if prompted” joyiga
+qo‘yasiz.
+
+### 4.2 Tuzoq: ANTHROPIC_API_KEY
+
+Hujjatdagi ogohlantirish (mazmunan): **obunangiz bo‘lsa-yu, muhitda
+`ANTHROPIC_API_KEY` o‘rnatilgan bo‘lsa, siz tasdiqlaganingizdan keyin
+Claude Code obunani emas, shu kalitni ishlatadi.**
+
+Bu nimaga olib keladi:
+
+- sarf obuna limitidan emas, **API hisobidan** (token uchun to‘lov) ketadi;
+- kalit eskirgan yoki o‘chirilgan tashkilotga tegishli bo‘lsa —
+  tushunarsiz autentifikatsiya xatolari.
+
+Kalit ko‘pincha boshqa loyiha uchun `.bashrc`, `.zshrc` yoki `.env`
+orqali o‘rnatilgan bo‘ladi va unutiladi.
+
+```bash
+echo $ANTHROPIC_API_KEY      # bo'sh bo'lishi kerak (obuna bilan ishlasangiz)
+unset ANTHROPIC_API_KEY      # joriy terminal uchun olib tashlash
+```
+
+Keyin sessiyada `/status` bilan qaysi hisob ishlatilayotganini tekshiring.
+Doimiy yechim — kalitni shell sozlama faylidan olib tashlash.
+
+<Deep title="Kirish ustuvorligi: Claude Code qaysi hisobni tanlaydi">
+Hujjatda hisob ma’lumotlari tartibi bor. Yuqoridagisi pastdagidan ustun:
+
+1. Bulut provayderi (`CLAUDE_CODE_USE_BEDROCK` va boshqalar o‘rnatilgan bo‘lsa)
+2. `ANTHROPIC_AUTH_TOKEN`
+3. `ANTHROPIC_API_KEY`
+4. `apiKeyHelper` skripti
+5. `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token` bilan, CI uchun)
+6. Profil yoki federatsiya
+7. `/login` orqali obuna — Pro, Max, Team va Enterprise uchun standart
+
+Ko‘rinib turibdiki, obuna eng pastda. Yuqoridagi istalgan narsa
+o‘rnatilgan bo‘lsa, u ustun keladi. Bulut sessiyalari (claude.ai/code)
+esa hujjatga ko‘ra har doim obuna hisobidan foydalanadi.
+</Deep>
+
+<Check q="Do'stingizda Max obunasi bor, lekin oy oxirida API hisobidan katta to'lov keldi. Birinchi nimani tekshirasiz?">
+Muhitda `ANTHROPIC_API_KEY` o‘rnatilganmi: `echo $ANTHROPIC_API_KEY` va
+shell sozlama fayllari (`.bashrc`, `.zshrc`, `.profile`). O‘rnatilgan
+bo‘lsa, Claude Code tasdiqlangandan keyin obuna o‘rniga shu kalitni
+ishlatgan. Sessiyada `/status` qaysi hisob ishlatilayotganini ko‘rsatadi.
+</Check>
+
+## 5. Qaysi muhit: terminal, IDE yoki ilova
+
+Oddiy tilda: Claude Code bitta, lekin uni bir necha “eshik”dan ochish
+mumkin. Ichidagi agent bir xil — farq qayerda o‘tirib ishlashingizda.
+
+| Muhit | Nima uchun yaxshi | Bilish kerak |
+| --- | --- | --- |
+| **Terminal (CLI)** | To‘liq imkoniyatlar, skriptlar, serverlar | Skript va Agent SDK faqat CLI’da |
+| **VS Code** kengaytmasi | Editor ichida ishlash, diff’larni ko‘rish | VS Code 1.94+; kengaytma `claude` ni PATH ga **qo‘shmaydi** |
+| **JetBrains** plagini | IntelliJ, PyCharm, WebStorm… ichida | Plagin CLI’ni IDE terminalida ishga tushiradi — **CLI’ni alohida o‘rnatish shart** |
+| **Desktop** ilova | Vizual review, parallel sessiyalar | Linux’da beta |
+| **Web** (claude.ai/code) | Bulutda ishlaydi, kompyuter yopilsa ham davom etadi | GitHub kerak; ba’zi buyruqlar yo‘q |
+| **Mobil** ilova | Bulut sessiyalarini boshlash va kuzatish | Kodni telefonda yozish uchun emas |
+
+### 5.1 Qaysi birini tanlash
+
+Kurs **terminalni asosiy** deb oladi, chunki:
+
+- hamma imkoniyat birinchi bo‘lib shu yerda;
+- keyingi darslardagi `claude -p`, hooks, CI — terminal buyruqlari;
+- IDE’lar ham ichkarida baribir CLI’dan foydalanadi (JetBrains holatida
+  to‘g‘ridan-to‘g‘ri).
+
+Lekin bu majburiyat emas. Amaliy maslahat: **terminalda o‘rganing,
+keyin qulay muhitga o‘ting.** Kod o‘qishni editorda afzal ko‘rsangiz — VS
+Code kengaytmasi. Uzoq vazifani kompyuterdan uzoqda davom ettirmoqchi
+bo‘lsangiz — web.
+
+### 5.2 Bulut sessiyalarining farqi
+
+Web’dagi sessiya sizning kompyuteringizda emas, Anthropic’ning bulutdagi
+virtual mashinasida ishlaydi. Hujjatga ko‘ra u yerda:
+
+- `/clear` yo‘q — yangi sessiyani yon paneldan boshlaysiz;
+- `/plugin`, `/resume` kabi faqat-terminal buyruqlar yo‘q;
+- kompyuteringizdagi plaginlar yuklanmaydi;
+- muhitdagi API kalitlar ishlatilmaydi — har doim obuna.
+
+<Check q="VS Code kengaytmasini o'rnatdingiz, lekin terminalda 'claude: command not found'. Nima bo'ldi?">
+Hujjatga ko‘ra VS Code kengaytmasi `claude` buyrug‘ini shell PATH’ga
+qo‘shmaydi. Terminalda ishlatish uchun CLI’ni alohida o‘rnatish kerak
+(2-bo‘lim). JetBrains’da esa aksincha — plagin CLI’siz umuman ishlamaydi.
+</Check>
+
+## 6. Windows: native yoki WSL
+
+Oddiy tilda: Windows’da Claude Code ikki xil yashashi mumkin — to‘g‘ridan-
+to‘g‘ri Windows’da (native) yoki Windows ichidagi Linux’da (WSL).
+
+| | Native Windows | WSL 2 | WSL 1 |
+| --- | --- | --- | --- |
+| O‘rnatish | PowerShell yoki CMD skripti | Linux skripti (WSL ichida) | Linux skripti |
+| Bash asbobi | Git for Windows bo‘lsa | Ha | Ha |
+| Sandbox | **Yo‘q** | Ha | Yo‘q |
+
+Native Windows’da Git for Windows ixtiyoriy, lekin hujjatga ko‘ra Bash va
+Monitor asboblari uchun kerak. Bo‘lmasa, Claude buyruqlarni PowerShell
+orqali bajaradi. Git Bash topilmasa, sozlamaning `env` qismida
+`CLAUDE_CODE_GIT_BASH_PATH` ko‘rsatiladi.
+
+**Tavsiya:** loyihangiz Linux serverda ishlasa yoki sandbox kerak bo‘lsa
+(3-dars) — **WSL 2**. Sof Windows loyihasi (.NET, PowerShell skriptlar)
+bo‘lsa — native.
+
+## 7. Terminalni sozlash
+
+Oddiy tilda: Claude Code terminal ichida ishlaydi, shuning uchun bir-ikki
+kichik sozlama kundalik ishni ancha qulay qiladi.
+
+### 7.1 Ko‘p qatorli so‘rov
+
+Uzun vazifani bir necha qatorda yozish kerak bo‘ladi. Hujjat bo‘yicha:
+
+- **Hamma joyda ishlaydi:** `Ctrl+J`, yoki qator oxirida `\` va `Enter`.
+- **`Shift+Enter`** sozlamasiz ishlaydi: Ghostty, Kitty, iTerm2, WezTerm,
+  Warp, Apple Terminal, Windows Terminal.
+- VS Code, Cursor, Zed va eski Alacritty’da `Shift+Enter` uchun bir marta
+  **`/terminal-setup`** ni ishga tushiring.
+- Juda uzun vazifa uchun 1-darsdagi `Ctrl+G` — so‘rovni matn muharririda
+  yozish.
+
+### 7.2 Boshqa qulayliklar
+
+| Nima | Qanday |
+| --- | --- |
+| Rang mavzusi | `/theme` |
+| Vim rejimi | `/config` → Editor mode (eski `/vim` buyrug‘i olib tashlangan) |
+| Tovushli bildirishnoma | `"preferredNotifChannel": "terminal_bell"` |
+| tmux ichida ishlash | `~/.tmux.conf` ga `set -g allow-passthrough on` va `set -s extended-keys on` |
+| macOS’da Option tugmalari | Terminal sozlamasida Option’ni Meta qilish (Apple Terminal: “Use Option as Meta Key”) |
+
+## 8. Birinchi sessiya — kadrma-kadr
+
+Oddiy tilda: notanish shaharga kelganda avval xaritaga qaraysiz, keyin
+yurasiz. Birinchi sessiyada ham avval **savol berasiz**, keyin
+**o‘zgartirasiz**.
+
+Hujjatdagi “quickstart” tartibi:
+
+1. Loyiha papkasiga o‘ting va `claude` ni ishga tushiring.
+2. Loyiha haqida savollar bering: “bu loyiha nima qiladi?”, “asosiy
+   kirish nuqtasi qayerda?”, “papkalar tuzilishini tushuntir”.
+3. Kichik o‘zgarish so‘rang va ruxsat so‘roviga **Ha** deng.
+4. Git bilan ishlang: “qaysi fayllarni o‘zgartirdim?”, “o‘zgarishlarni
+   tavsifli xabar bilan commit qil”.
+
+Quyida amaliyotdagi **eslatma** loyihasida shu tartib — soddalashtirilgan
+va o‘zbekchalashtirilgan ko‘rinishda.
+
+<Session
+  title="~/eslatma — claude"
+  lines={[
+    { k: "user", t: "Bu loyiha nima qiladi va testlar qanday ishga tushiriladi? Hech narsani o'zgartirma." },
+    { k: "tool", t: "Read(README.md)" },
+    { k: "out", t: "Read 78 lines" },
+    { k: "tool", t: "Read(eslatma.py)" },
+    { k: "out", t: "Read 106 lines" },
+    { k: "say", t: "Bu terminal uchun eslatmalar daftari: qosh, royxat, bajar buyruqlari, ma'lumot eslatmalar.json da. Testlar: python -m unittest. README da yangi qidir funksiyasi uchun qoidalar bor." },
+    { k: "note", t: "O'zingiz buyruq ishga tushirish — ! prefiksi. Chiqishi sessiyaga qo'shiladi." },
+    { k: "user", t: "!python -m unittest" },
+    { k: "out", t: "Ran 5 tests in 0.001s\n\nOK" },
+    { k: "note", t: "/init — loyiha uchun CLAUDE.md yozadi (9-bo'lim)." },
+    { k: "user", t: "/init" },
+    { k: "tool", t: "Write(CLAUDE.md)" },
+    { k: "ask", t: "CLAUDE.md faylini yaratishga ruxsat berasizmi?\n  1. Ha\n  2. Ha, shu sessiyada barcha tahrirlarga\n  3. Yo'q, boshqacha qil" },
+    { k: "out", t: "Wrote 24 lines to CLAUDE.md" },
+    { k: "user", t: "@README.md dagi qoidalar bo'yicha qidir funksiyasi va buyrug'ini qo'sh. Tayyor degani: python tekshir.py da 'qidir' va 'CLI' tekshiruvlari OK. test_eslatma.py va tekshir.py ga tegma." },
+    { k: "tool", t: "Edit(eslatma.py)" },
+    { k: "out", t: "Updated eslatma.py with 28 additions" },
+    { k: "tool", t: "Bash(python tekshir.py)" },
+    { k: "out", t: "[OK] qidir: asosiy qidiruv\n[OK] qidir: hammasi, teglar, bo'sh so'rov\n[OK] CLI: python eslatma.py qidir ...\n[XATO] Git: o'zgarishlar commit qilingan\n...\nJami: 7/8 OK" },
+    { k: "say", t: "qidir tayyor, uchala tekshiruv OK. Qolgan XATO — o'zgarishlar hali commit qilinmagan; buni sizdan so'ramasdan qilmadim." },
+    { k: "user", t: "o'zgarishlarni tavsifli xabar bilan commit qil" },
+    { k: "tool", t: "Bash(git add CLAUDE.md eslatma.py && git commit -m \"...\")" },
+    { k: "out", t: "[main 3f2a9c1] Add qidir: matn va teg bo'yicha qidiruv; CLAUDE.md\n 2 files changed, 52 insertions(+)" },
+    { k: "tool", t: "Bash(python tekshir.py)" },
+    { k: "out", t: "Jami: 8/8 OK" },
+  ]}
+/>
+
+Nimalarga e’tibor bering:
+
+- **Birinchi so‘rovda “hech narsani o‘zgartirma”.** Notanish loyihada
+  avval o‘qish — xavfsiz va arzon. Agent README’dagi qoidalarni o‘zi
+  ko‘rib qoldi.
+- **`!` prefiksi** — buyruqni o‘zingiz ishga tushirasiz, natija esa
+  sessiya kontekstiga tushadi. Agent uni ko‘radi.
+- **`@README.md`** — faylni aniq ko‘rsatish. Agent qaysi fayl haqida
+  gapirayotganingizni taxmin qilmaydi.
+- **Tekshiruvning bir qismi qasddan qoldirildi.** Agent commit’ni
+  so‘ramasdan qilmadi va buni ochiq aytdi. Commit, push kabi
+  harakatlarni siz boshqarasiz.
+
+<Callout type="ogoh" title="Birinchi sessiya — Manual rejimda">
+Birinchi haftada ruxsat so‘rovlarini **o‘qib** “Ha” deng. Shunda agent
+qanday buyruqlarni, qanday tartibda ishlatishini o‘rganasiz. Rejimlar va
+so‘rovlarni kamaytirish — 3-darsda.
+</Callout>
+
+## 9. /init va birinchi CLAUDE.md
+
+Oddiy tilda: CLAUDE.md — har sessiya boshida agentning stoliga
+qo‘yiladigan “loyiha qo‘llanmasi” (1-dars, 7-bo‘lim). `/init` uning
+birinchi qoralamasini yozib beradi.
+
+Hujjatga ko‘ra `/init`:
+
+- kod bazasini tahlil qiladi va **build buyruqlari, test ko‘rsatmalari
+  va loyiha konventsiyalari** bilan CLAUDE.md yozadi;
+- CLAUDE.md allaqachon bo‘lsa — **ustidan yozmaydi**, yaxshilashlarni
+  taklif qiladi;
+- `CLAUDE_CODE_NEW_INIT=1` bilan interaktiv rejim: CLAUDE.md, skills va
+  hooks’dan qaysilarini sozlashni so‘raydi va fayl yozishdan oldin taklifni
+  ko‘rsatadi.
+
+### 9.1 /init dan keyin nima qilish kerak
+
+`/init` — qoralama, tayyor hujjat emas. Uni **o‘qing va qisqartiring**:
+
+1. **Noto‘g‘ri** narsalarni o‘chiring — agent loyihani noto‘g‘ri tushungan
+   bo‘lishi mumkin.
+2. **O‘z-o‘zidan ko‘rinadigan** narsalarni o‘chiring (“bu Python loyihasi”).
+   Har qator har sessiyada token yeydi.
+3. **Agent bilmaydigan** narsani qo‘shing: “pullar tiyinda, butun son”,
+   “`main` ga to‘g‘ridan-to‘g‘ri push qilinmaydi”.
+4. Test va build buyruqlari **aniq** yozilganini tekshiring.
+5. Commit qiling — CLAUDE.md jamoa bilan bo‘lishiladi.
+
+CLAUDE.md’ni qanday yozish — butun 5-darsning mavzusi. Hozircha bitta
+qoida: **qisqa va aniq** — amaliyotda 80 qatordan oshmasligi kerak.
+
+<Check q="Loyihada CLAUDE.md allaqachon bor. /init ni ishga tushirsangiz, u o'chib ketadimi?">
+Yo‘q. Hujjatga ko‘ra CLAUDE.md mavjud bo‘lsa, `/init` uning ustidan
+yozmaydi — yaxshilash takliflarini beradi. Baribir har qanday o‘zgarishni
+git diff orqali ko‘rib chiqing.
+</Check>
+
+## 10. Fayllar xaritasi: nima qayerda turadi
+
+Oddiy tilda: Claude Code sozlamalari ikki joyda yashaydi — **sizning
+uyingizda** (`~`, barcha loyihalar uchun) va **loyihaning o‘zida**. Ba’zi
+fayllar jamoa bilan bo‘lishiladi, ba’zilari faqat sizniki.
+
+| Fayl | Kimniki | Git’ga? | Nima uchun |
+| --- | --- | --- | --- |
+| `CLAUDE.md` (loyiha ildizida) | Jamoa | **Ha** | Loyiha qo‘llanmasi |
+| `CLAUDE.local.md` | Faqat siz | **Yo‘q** — `.gitignore` ga qo‘shing | Shaxsiy eslatmalar shu loyiha uchun |
+| `.claude/settings.json` | Jamoa | **Ha** | Umumiy ruxsatlar, hooks, plaginlar |
+| `.claude/settings.local.json` | Faqat siz | **Yo‘q** | Shaxsiy ruxsatlar shu loyihada |
+| `~/.claude/settings.json` | Faqat siz | — | Barcha loyihalar uchun sozlamalar |
+| `~/.claude/CLAUDE.md` | Faqat siz | — | Barcha loyihalar uchun shaxsiy ko‘rsatmalar |
+| `~/.claude.json` | Faqat siz | — | Kirish sessiyasi, MCP, loyiha holati; qo‘lda tahrirlash shart emas |
+
+Ikki nozik farq hujjatdan:
+
+- **`settings.local.json`** — Claude Code uni o‘zi yaratganda git’dan
+  chetda qoldiradi. Qo‘lda yaratsangiz, `.gitignore` ga **o‘zingiz**
+  qo‘shasiz.
+- **`CLAUDE.local.md`** — avtomatik chetlatilmaydi. Hujjat: uni
+  `.gitignore` ga qo‘shing.
+
+Sozlamalar to‘qnashsa, ustunlik tartibi: **tashkilot (managed) →
+buyruq qatori → loyiha local → loyiha → foydalanuvchi**. Batafsil —
+12-darsda.
+
+<Callout type="xato" title="Klassik xato">
+`.claude/settings.local.json` yoki `CLAUDE.local.md` ni tasodifan commit
+qilish. Ularda shaxsiy ruxsatlar, ichki yo‘llar yoki eslatmalar bo‘ladi va
+butun jamoaga tarqaladi. Amaliyotdagi `tekshir.py` aynan shuni tekshiradi.
+</Callout>
+
+## 11. Kundalik buyruqlar
+
+| Buyruq | Nima qiladi |
+| --- | --- |
+| `claude` | Joriy papkada interaktiv sessiya |
+| `claude "vazifa"` | Sessiyani shu vazifa bilan boshlaydi |
+| `claude -c` | Shu papkadagi oxirgi sessiyani davom ettiradi |
+| `claude -r` | Sessiyani tanlab davom ettiradi |
+| `claude -p "savol"` | Bir martalik javob va chiqish (15-dars) |
+| `/help` | Yordam va buyruqlar ro‘yxati |
+| `/status` | Versiya, model, akkaunt |
+| `/clear` | Yangi sessiya (bog‘liq bo‘lmagan vazifalar orasida) |
+| `/exit` | Chiqish |
+
+1-darsdagilarni ham eslang: `Esc` — to‘xtatish, `Esc Esc` — rewind,
+`Shift+Tab` — rejimlar, `!` — o‘zingiz buyruq, `@` — fayl.
+
+## 12. Muammolar va yechimlar
+
+Hujjatdagi eng ko‘p uchraydigan o‘rnatish va kirish muammolari:
+
+| Belgisi | Sababi | Yechim |
+| --- | --- | --- |
+| `command not found: claude` | PATH yangilanmagan | Yangi terminal oching; PATH’ni tekshiring |
+| Ikki xil versiya, g‘alati xulq | Bir nechta o‘rnatish | `which -a claude` — keraksizini o‘chiring |
+| `syntax error near unexpected token '<'` | Skript o‘rniga HTML yuklangan (tarmoq, proksi) | Tarmoqni tekshiring, qayta urining |
+| `EACCES: permission denied` (npm) | Global npm papkasiga ruxsat yo‘q | `sudo` emas — npm sozlamasini tuzating yoki native o‘rnating |
+| TLS xatosi, “unable to get local issuer certificate” | Korporativ proksi sertifikati | Tashkilot sertifikatini sozlang |
+| `Killed` yoki chiqish kodi 137 | Xotira yetmadi | 4 GB+ RAM |
+| “Not logged in or token expired” | Sessiya muddati tugagan | `/login` |
+| Kutilmagan to‘lov yoki 403 | `ANTHROPIC_API_KEY` ishlatilmoqda | 4.2-bo‘lim |
+| WSL1’da “Exec format error” | WSL 1 | WSL 2 ga o‘ting |
+
+Birinchi qadam deyarli har doim bir xil: **`claude doctor`**, keyin
+sessiyada **`/status`**.
+
+## 13. Yangilash va o‘chirish
+
+- Native o‘rnatish o‘zi yangilanadi; qo‘lda — `claude update`.
+- Kanalni almashtirish — 3.1-bo‘lim.
+- O‘chirish (native): `rm -f ~/.local/bin/claude` va
+  `rm -rf ~/.local/share/claude`. Homebrew, WinGet, npm — har biri o‘z
+  `uninstall` buyrug‘i bilan.
+
+<Callout type="ogoh" title="~/.claude ni o'chirishdan oldin">
+Hujjatga ko‘ra `~/.claude` va `~/.claude.json` ni o‘chirish **barcha
+sozlamalar, ruxsat berilgan asboblar, MCP sozlamalari va sessiyalar
+tarixini** yo‘q qiladi. Faqat to‘liq tozalash kerak bo‘lsa qiling.
+</Callout>
+
+## 14. Afsonalar va haqiqat
+
+| Afsona | Haqiqat |
+| --- | --- |
+| “Bepul akkaunt bilan ham ishlaydi” | Bepul claude.ai rejasida Claude Code yo‘q |
+| “Obunam bor — API’dan pul ketmaydi” | `ANTHROPIC_API_KEY` o‘rnatilgan bo‘lsa, u ishlatiladi |
+| “npm ruxsat bermasa, sudo bilan o‘rnataman” | Hujjat: `sudo npm install -g` ishlatmang |
+| “VS Code kengaytmasi terminalga ham claude qo‘shadi” | Qo‘shmaydi — CLI alohida |
+| “`/init` mening CLAUDE.md’imni o‘chiradi” | Mavjud bo‘lsa, faqat yaxshilash taklif qiladi |
+| “`/init` yozgani tayyor qo‘llanma” | Qoralama: o‘qing, qisqartiring, aniqlang |
+| “Web’dagi sessiya ham mening plaginlarimni ko‘radi” | Bulutda lokal plaginlar yuklanmaydi |
+
+## 15. Butun dars o‘nta gapda
+
+1. Claude Code uchun **pullik** hisob kerak: Pro, Max, Team, Enterprise
+   yoki Console.
+2. Tavsiya — **native o‘rnatuvchi**: bitta buyruq, o‘zi yangilanadi.
+3. npm’ni faqat Node 22+ bilan va **hech qachon `sudo` bilan emas**.
+4. O‘rnatgandan keyin: `claude --version`, `claude doctor`, sessiyada
+   `/status`.
+5. **`ANTHROPIC_API_KEY`** o‘rnatilgan bo‘lsa, obuna o‘rniga u ishlatiladi —
+   tekshiring.
+6. Asosiy muhit — **terminal**; VS Code, JetBrains, desktop va web —
+   qulaylik uchun. JetBrains CLI’siz ishlamaydi.
+7. Windows’da sandbox kerak bo‘lsa — **WSL 2**.
+8. Birinchi sessiya: avval **savol** (“hech narsani o‘zgartirma”), keyin
+   kichik o‘zgarish, keyin commit.
+9. **`/init`** — CLAUDE.md qoralamasi: o‘qing, qisqartiring, commit qiling.
+10. **`CLAUDE.local.md`** va **`settings.local.json`** — shaxsiy, git’ga
+    tushmaydi.
+
+## 16. Amaliyot
+
+Amaliyot — **eslatma** loyihasi: terminal uchun kichik eslatmalar daftari.
+Siz Claude Code’ni o‘rnatasiz, muhitni tekshirasiz, birinchi sessiyani
+o‘tkazasiz, `/init` bilan CLAUDE.md yozasiz va README’dagi qoidalar
+bo‘yicha `qidir` funksiyasini qo‘shasiz. Faqat Python 3.9+ va git kerak.
+
+<Download file="eslatma.zip" title="Amaliyot fayllarini yuklab olish" files="eslatma.py, test_eslatma.py, muhit.py, tekshir.py, README.md, .gitignore" />
+
+| Fayl | Nima |
+| --- | --- |
+| `eslatma.py` | Eslatmalar daftari: `qosh`, `royxat`, `bajar` |
+| `test_eslatma.py` | Mavjud funksiyalar testlari. O‘zgartirilmaydi |
+| `muhit.py` | Muhit tekshiruvi: Python, git, claude, API kalit tuzog‘i, Windows/WSL |
+| `tekshir.py` | Qabul tekshiruvi: sakkizta tekshiruv. O‘zgartirilmaydi |
+| `README.md` | `qidir` qoidalari va topshiriqlar |
+
+<Task title="1-daraja: o'rnatish va muhit (15 daqiqa)">
+Claude Code’ni 2-bo‘limdagi buyruq bilan o‘rnating. Keyin `claude
+--version`, `claude doctor` va `python muhit.py` ni ishga tushiring.
+`muhit.py` da `XATO` qolmasin. `OGOH` bo‘lsa, sababini 12-bo‘limdan
+toping va tuzating — ayniqsa `ANTHROPIC_API_KEY` haqidagisini.
+</Task>
+
+<Task title="2-daraja: birinchi sessiya">
+`git init && git add . && git commit -m "boshlang'ich holat"`, keyin
+`claude`. 8-bo‘limdagi tartibda: loyiha haqida uchta savol (bittasida
+`@eslatma.py`), `!python -m unittest`, `/status`. Bu bosqichda hech
+narsani o‘zgartirtirmang.
+</Task>
+
+<Task title="3-daraja: /init va CLAUDE.md">
+`/init` ni ishga tushiring. 9.1-bo‘limdagi besh qadam bo‘yicha natijani
+tahrirlang: noto‘g‘ri va o‘z-o‘zidan ko‘rinadiganini o‘chiring, test
+buyrug‘i aniq yozilganini tekshiring. 80 qatordan oshmasin. Commit qiling.
+</Task>
+
+<Task title="4-daraja: birinchi funksiya">
+README’dagi “Qoidalar” bo‘yicha `qidir` funksiyasi va buyrug‘ini Claude
+bilan qo‘shing. 1-darsdagi shablon: qoidalar qayerda, “tayyor” sharti
+(`python tekshir.py` — `Jami: 8/8 OK`), nimaga tegmaslik. Oxirida
+Claude’dan o‘zgarishlarni **tavsifli xabar bilan commit qilishni**
+so‘rang va commit’ni `git log -1 --stat` bilan o‘zingiz ko‘ring.
+</Task>
+
+**Tekshiruv mezoni:** `python tekshir.py` oxirida `Jami: 8/8 OK`.
+
+<Deep title="tekshir.py nimalarni tekshiradi">
+1. `test_eslatma.py` o‘zgarmagan (SHA-256 xesh).
+2. Mavjud testlar o‘tadi — yangi funksiya eskisini buzmagan.
+3. `CLAUDE.md` bor, 80 qatordan oshmaydi va test buyrug‘ini o‘z ichiga
+   oladi.
+4. `qidir`: matn bo‘yicha, katta-kichik harfga sezgir emas, faqat
+   bajarilmaganlar, id tartibida.
+5. `qidir`: `hammasi=True`, `#teg` aniq moslik, bo‘sh so‘rov — `ValueError`.
+6. Buyruq qatori: `qidir`, `--hammasi` va “Hech narsa topilmadi”.
+7. Git: kamida ikki commit va commit qilinmagan o‘zgarish yo‘q.
+8. Git: `CLAUDE.local.md`, `settings.local.json` va `eslatmalar.json`
+   repoda yo‘q.
+
+Tekshiruvning o‘zi ham sinalgan: to‘g‘ri yechimga kiritilgan 21 ta ataylab
+xatoning (katta-kichik harf, teg moslik, tartib, bo‘sh so‘rov, CLAUDE.md,
+git holatlari) hammasini ushladi.
+</Deep>
+
+## 17. Nazorat savollari
+
+<QA q="Claude Code uchun qaysi hisoblar ishlaydi va qaysi biri ishlamaydi?">
+Ishlaydi: Pro, Max, Team, Enterprise, Console (API) va bulut provayderlari
+(Bedrock, Google Cloud, Microsoft Foundry). Ishlamaydi: bepul claude.ai
+rejasi.
+</QA>
+
+<QA q="Nega native o'rnatish tavsiya etiladi?">
+Bitta buyruq, qo‘shimcha dastur (Node.js) talab qilmaydi va fonda o‘zi
+yangilanadi. Homebrew, WinGet va Linux paket menejerlari standart holatda
+o‘zi yangilanmaydi.
+</QA>
+
+<QA q="ANTHROPIC_API_KEY tuzog'i nima va qanday aniqlanadi?">
+Obuna bo‘lsa ham, muhitda `ANTHROPIC_API_KEY` o‘rnatilgan bo‘lsa,
+tasdiqlangandan keyin Claude Code shu kalitni ishlatadi — sarf API
+hisobidan ketadi. Aniqlash: `echo $ANTHROPIC_API_KEY`, sessiyada `/status`.
+Yechim: `unset ANTHROPIC_API_KEY` va shell sozlamasidan olib tashlash.
+</QA>
+
+<QA q="claude doctor va /doctor ning farqi nima?">
+`claude doctor` — terminal buyrug‘i: sessiya ochmasdan o‘rnatish va
+sozlamalar diagnostikasini chiqaradi, hech narsani o‘zgartirmaydi.
+`/doctor` — sessiya ichida: sozlashni tekshiradi va tuzatishlarni taklif
+qiladi, siz tasdiqlasangiz qo‘llaydi.
+</QA>
+
+<QA q="JetBrains plagini va VS Code kengaytmasining CLI bilan munosabati qanday farq qiladi?">
+JetBrains plagini IDE terminalida `claude` CLI’ni ishga tushiradi va o‘z
+nusxasini olib kelmaydi — CLI’ni alohida o‘rnatish shart. VS Code
+kengaytmasi o‘zicha ishlaydi, lekin `claude` ni shell PATH’ga qo‘shmaydi.
+</QA>
+
+<QA q="Windows'da sandbox kerak. Qaysi variantni tanlaysiz?">
+WSL 2. Hujjatga ko‘ra sandbox native Windows’da va WSL 1 da qo‘llab-
+quvvatlanmaydi.
+</QA>
+
+<QA q="Birinchi sessiyani nega 'hech narsani o'zgartirma' bilan boshlash tavsiya etiladi?">
+Notanish loyihada avval tushunish kerak: o‘qish xavfsiz (hech narsa
+buzilmaydi) va arzon. Agent o‘qish davomida README’dagi qoidalar,
+testlar va tuzilmani kontekstga oladi — keyingi o‘zgarish shu bilimga
+tayanadi.
+</QA>
+
+<QA q="/init dan keyin CLAUDE.md bilan qanday besh ish qilinadi?">
+Noto‘g‘risini o‘chirish, o‘z-o‘zidan ko‘rinadiganini o‘chirish, agent
+bilmaydigan qoidalarni qo‘shish, test va build buyruqlarini tekshirish,
+commit qilish.
+</QA>
+
+<QA q="settings.local.json va CLAUDE.local.md ning git bilan munosabati qanday farq qiladi?">
+`settings.local.json` ni Claude Code o‘zi yaratganda git’dan chetda
+qoldiradi (qo‘lda yaratsangiz — o‘zingiz `.gitignore` ga qo‘shasiz).
+`CLAUDE.local.md` avtomatik chetlatilmaydi — uni `.gitignore` ga qo‘shish
+kerak.
+</QA>
+
+<QA q="'command not found: claude' chiqdi, lekin o'rnatish muvaffaqiyatli tugagan edi. Qanday tekshirasiz?">
+Yangi terminal oching (PATH yangilanishi uchun). Keyin `which -a claude`
+— bir nechta o‘rnatish yoki PATH’da yo‘qligini ko‘rsatadi. `claude
+doctor` diagnostika beradi. VS Code kengaytmasini o‘rnatgan bo‘lsangiz —
+u CLI’ni PATH’ga qo‘shmasligini eslang.
+</QA>
+
+## 18. Lug‘at
+
+| Atama | Ma’nosi |
+| --- | --- |
+| Native o‘rnatish | Rasmiy skript orqali o‘rnatish; o‘zi yangilanadi |
+| Kanal (`latest`, `stable`) | Qaysi versiyalar oqimini kuzatish |
+| `claude doctor` | O‘rnatish diagnostikasi, sessiyasiz |
+| `/status` | Versiya, model va akkaunt holati |
+| PATH | Terminal dasturlarni qidiradigan papkalar ro‘yxati |
+| WSL | Windows ichidagi Linux muhiti |
+| Sandbox | Buyruqlarni OS darajasida cheklash (3-dars) |
+| `/init` | CLAUDE.md qoralamasini yozuvchi buyruq |
+| `CLAUDE.local.md` | Faqat sizga tegishli loyiha eslatmalari; git’ga tushmaydi |
+| `settings.local.json` | Faqat sizga tegishli loyiha sozlamalari |
+| Bulut sessiyasi | claude.ai/code’dagi, Anthropic VM’ida ishlaydigan sessiya |
+
+## 19. Manbalar
+
+Ma’lumotlar 2026-yil oktyabr holatiga, Claude Code rasmiy hujjatlaridan
+(code.claude.com/docs/en/):
+
+- “Setup” — talablar, o‘rnatish usullari, yangilanish, o‘chirish (setup)
+- “Quickstart” — birinchi sessiya tartibi (quickstart)
+- “Authentication” — kirish ustuvorligi va API kalit tuzog‘i (authentication)
+- “Platforms”, “VS Code”, “JetBrains”, “Claude Code on the web” — muhitlar
+- “Troubleshooting” — o‘rnatish va kirish muammolari (troubleshoot-install)
+- “Terminal configuration” — ko‘p qatorli kiritish, `/terminal-setup`,
+  tmux (terminal-config)
+- “Memory” — `/init`, CLAUDE.md va CLAUDE.local.md (memory)
+- “Settings” — sozlama fayllari va ustuvorlik (settings)
+
+Amaliyot raqamlari (8 tekshiruv, 21 mutatsiya) — kurs amaliyotida
+referens yechim bilan o‘lchangan. 8-bo‘limdagi sessiya soddalashtirilgan;
+fayl qatorlari soni amaliyot fayllaridan olingan.
+
+<Callout type="maslahat" title="Keyingi qadam">
+Endi Claude Code o‘rnatilgan va birinchi sessiya o‘tdi. **3-darsda**
+eng muhim xavfsizlik mavzusi: agentga nimaga ruxsat berish kerak va
+nimaga yo‘q — ruxsat rejimlari, allow/deny qoidalari, plan mode va
+sandbox.
+</Callout>

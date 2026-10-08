@@ -18,7 +18,8 @@ async function walk(dir) {
   for (const e of (await readdir(dir, { withFileTypes: true })).sort((a, b) =>
     a.name.localeCompare(b.name),
   )) {
-    if (e.name === "__pycache__" || e.name.startsWith(".")) continue;
+    // .gitignore kabi kerakli nuqtali fayllar qoladi; git papkasi va tizim fayllari — yo'q
+    if (["__pycache__", ".git", ".DS_Store"].includes(e.name)) continue;
     const p = join(dir, e.name);
     if (e.isDirectory()) out.push(...(await walk(p)));
     else out.push(p);

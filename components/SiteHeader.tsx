@@ -25,7 +25,7 @@ export function SiteHeader() {
             target="_blank"
             rel="noopener noreferrer"
             title="Muallif portfoliosi"
-            className="flex items-center gap-2 rounded-full border border-[var(--skin-border)] py-1 pr-3 pl-1 transition-colors hover:bg-[var(--skin-surface)]"
+            className="flex items-center gap-2 rounded-full border border-[var(--skin-border)] p-1 transition-colors hover:bg-[var(--skin-surface)] sm:pr-3"
           >
             <span
               aria-hidden
@@ -33,7 +33,7 @@ export function SiteHeader() {
             >
               <AuthorPhoto className="h-full w-full" fallback="dM" />
             </span>
-            <span className="text-sm font-medium">{site.author.handle}</span>
+            <span className="hidden text-sm font-medium sm:inline">{site.author.handle}</span>
           </a>
           <a
             href={site.author.telegramUrl}

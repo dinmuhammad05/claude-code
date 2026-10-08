@@ -46,10 +46,12 @@ export const lessons: Lesson[] = [
     summary:
       "Terminal, VS Code, JetBrains, desktop, web va mobil: qaysi biri qachon kerak. O‘rnatish, kirish, yangilanish va birinchi haqiqiy vazifa.",
     accent: "#e0a458",
-    status: "rejada",
+    status: "tayyor",
     level: "boshlang'ich",
-    minutes: 45,
+    minutes: 50,
     topics: ["O‘rnatish", "Autentifikatsiya", "IDE", "Cloud sessiyalar", "claude doctor"],
+    published: "2026-10-08",
+    updated: "2026-10-08",
   },
   {
     order: 3,

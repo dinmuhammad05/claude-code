@@ -6,7 +6,7 @@ Sayt: https://dinmuhammad.uz/claude-code/
 | # | Dars | Holat |
 | --- | --- | --- |
 | 1 | Claude Code qanday ishlaydi: agent sikli | tayyor |
-| 2 | O‘rnatish, muhitlar va birinchi seans | rejada |
+| 2 | O‘rnatish, muhitlar va birinchi seans | tayyor |
 | 3 | Ruxsatlar, rejimlar va sandbox | rejada |
 | 4 | Kontekst oynasi: compact, clear va rewind | rejada |
 | 5 | CLAUDE.md va xotira | rejada |
