@@ -60,10 +60,12 @@ export const lessons: Lesson[] = [
     summary:
       "Nimaga ruxsat berish kerak va nimaga yo‘q: permission rejimlari, allow/ask/deny qoidalari, plan mode, sandbox — va nega CLAUDE.md xavfsizlik chegarasi emas.",
     accent: "#c96442",
-    status: "rejada",
+    status: "tayyor",
     level: "o'rta",
     minutes: 60,
     topics: ["Permission modes", "Allow/deny qoidalari", "Plan mode", "Sandbox", "Himoyalangan yo‘llar"],
+    published: "2026-10-08",
+    updated: "2026-10-08",
   },
   {
     order: 4,

@@ -254,8 +254,10 @@ Bu sessiyada nimalarga e’tibor berish kerak:
   ishga tushirgani va natijasi (8/8, `git diff --stat`) ko‘rsatilgan.
   Hujjatdagi tavsiya: Claude’dan muvaffaqiyatni **da’vo qilishni emas,
   dalil ko‘rsatishni** talab qiling.
-- **Ruxsat so‘rovi — siklning bir qismi.** Manual (standart) rejimda Claude
-  fayl tahriri va shell buyrug‘idan oldin so‘raydi. “Ha, shu sessiyada
+- **Ruxsat so‘rovi — siklning bir qismi.** Manual rejimda Claude
+  fayl tahriri va shell buyrug‘idan oldin so‘raydi. (Yangi versiyalarda
+  sessiya standart holatda **auto** rejimda ochiladi — Manual’ga
+  `claude --permission-mode default` yoki `Shift+Tab` bilan o‘tasiz.) “Ha, shu sessiyada
   hammasiga” varianti keyingi so‘rovlarni kamaytiradi. Rejimlar va
   qoidalar 3-darsda.
 
@@ -346,8 +348,9 @@ berish, vazifalar ro‘yxati.
 | Veb | `WebFetch`, `WebSearch` | Sahifa yuklaydi, qidiradi | Ha |
 | Orkestratsiya | `Agent`, `AskUserQuestion`, `TaskCreate`… | Subagent, savol, vazifalar ro‘yxati | Yo‘q |
 
-“Ruxsat so‘raydimi” ustuni — Manual (standart) rejim uchun. Boshqa
-rejimlarda bu o‘zgaradi (3-dars).
+“Ruxsat so‘raydimi” ustuni — Manual rejim uchun. Boshqa rejimlarda bu
+o‘zgaradi: masalan, yangi versiyalarda standart bo‘lgan **auto** rejimda
+so‘rov o‘rniga fon klassifikatori qaror qiladi (3-dars).
 
 ### 5.1 Ikki nozik tafsilot
 
@@ -745,8 +748,9 @@ nazoratining o‘rnini bosmaydi**.
 
 <Callout type="ogoh" title="Amaliy qoida">
 Qaytarib bo‘lmaydigan har bir harakat — **sizning ongli “Ha” ingiz**
-bilan bo‘lishi kerak. Shuning uchun boshlanishda Manual (standart)
-rejimda ishlang va Bash buyruqlarini o‘qib ruxsat bering. Muhim ishdan
+bilan bo‘lishi kerak. Shuning uchun boshlanishda Manual rejimda ishlang
+(`claude --permission-mode default`) va Bash buyruqlarini o‘qib ruxsat
+bering. Muhim ishdan
 oldin git commit qiling: git — eng ishonchli “bekor qilish” tugmasi.
 </Callout>
 
@@ -1031,7 +1035,8 @@ rejangiz”. Keyin uni agentning haqiqiy harakati bilan solishtirasiz.
 </Task>
 
 <Task title="2-daraja: A sessiya — noaniq vazifa">
-Manual (standart) rejimda Claude Code’ni oching va **faqat** shuni
+Claude Code’ni Manual rejimda oching (`claude --permission-mode
+default`) va **faqat** shuni
 yozing: `testlar o'tmayapti, tuzatib ber`. Har ruxsat so‘rovini o‘qing.
 Agent tugatgach, unga hech narsa demasdan `python tekshir.py` va `git
 diff --stat` ni ishga tushiring. Sessiya ichida `/context` ni ham
@@ -1198,7 +1203,7 @@ ko‘rsat.” Asosiysi: buyruq, kutilgan natija va dalil.
 | Prompt caching | Takrorlanadigan kontekst qismini arzonroq qayta ishlatish |
 | Checkpoint | Claude fayl tahriridan oldin saqlaydigan holat; rewind uchun |
 | Rewind | Kod va/yoki suhbatni checkpoint’ga qaytarish |
-| Manual (standart) rejim | Fayl tahriri va shell buyrug‘idan oldin ruxsat so‘raydigan rejim |
+| Manual rejim (`default`) | Fayl tahriri va shell buyrug‘idan oldin ruxsat so‘raydigan rejim |
 | CLAUDE.md | Har sessiyada yuklanadigan loyiha ko‘rsatmalari |
 | Avtomatik xotira | Claude o‘zi yozadigan, sessiyalar orasida saqlanadigan eslatmalar (MEMORY.md) |
 | Tekshiriladigan maqsad | Agent o‘zi ishga tushira oladigan, bir ma’noli “tayyor” sharti |

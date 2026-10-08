@@ -1,0 +1,790 @@
+## Bu darsda nima o‘rganasiz
+
+Oddiy tilda: yangi hamkasbga ofis kalitini berasiz. Lekin hamma xonaning
+kalitini emas: oshxona va majlislar xonasi — erkin, buxgalteriya — faqat
+so‘rab, server xonasi — umuman yo‘q. Va eng muhimi: bu qoidalarni
+**eshikdagi qulf** ta’minlaydi, hamkasbning yaxshi niyati emas.
+
+Claude Code’da ham xuddi shunday. Agent haqiqiy kompyuterda haqiqiy
+buyruqlarni bajaradi (1-dars). Bu darsda uni **xavfsiz va qulay** qilib
+cheklashni o‘rganasiz:
+
+- **rejimlar** — agent qanchalik mustaqil ishlaydi;
+- **qoidalar** — nimaga so‘rovsiz ruxsat, nima so‘raladi, nima taqiqlangan;
+- **sandbox** — operatsion tizim darajasidagi devor.
+
+| Savol | Bo‘lim |
+| --- | --- |
+| CLAUDE.md’ga “buni qilma” deb yozish yetarlimi? | 2 |
+| Qaysi rejim qachon kerak? | 3–6 |
+| Qoidalar qanday tartibda tekshiriladi? | 7 |
+| `Bash(git push *)` haqiqatan push’ni to‘xtatadimi? | 8–9 |
+| `.env` ni qanday yashirish kerak? | 10 |
+| Qoidalar qaysi faylda turadi va qaysi biri ustun? | 12 |
+| Sandbox nima va qachon kerak? | 14 |
+| Jamoa uchun tayyor sozlama qanday bo‘ladi? | 15 |
+
+<Callout type="info" title="Vaqtingiz kam bo'lsa — 15 daqiqalik yo'l">
+**2-bo‘lim** (tavsiya va majburiyat), **7-bo‘lim** (qoidalar tartibi),
+**9-bo‘lim** (Bash qoidalari chegara emas) va **15-bo‘lim** (tayyor
+sozlama). Bu to‘rttasi — darsning yadrosi.
+</Callout>
+
+<Callout type="maslahat" title="Bu dars nimaga tayanadi">
+1-darsdagi “model va harness” farqi va 2-darsdagi sozlama fayllari xaritasi.
+Faktlar rasmiy hujjatdan (21-bo‘lim). Claude Code tez yangilanadi:
+versiya raqamlari va menyu yozuvlari farq qilishi mumkin, lekin qoidalar
+tartibi va “tavsiya ≠ majburiyat” g‘oyasi o‘zgarmaydi.
+</Callout>
+
+## 1. Uch qatlam
+
+Oddiy tilda: uyning xavfsizligi bitta qulfdan iborat emas. Darvoza,
+eshik qulfi va seyf — har biri boshqasi o‘tkazib yuborgan narsani ushlaydi.
+
+Claude Code’da ham uch qatlam bor:
+
+| Qatlam | Savol | Kim ijro etadi |
+| --- | --- | --- |
+| **Rejim** | Agent har harakatda so‘raydimi yoki o‘zi qaror qiladimi? | Claude Code |
+| **Qoidalar** | Aynan qaysi asbob va buyruq ruxsat, so‘raladi yoki taqiqlangan? | Claude Code |
+| **Sandbox** | Buyruq qaysi fayllarga va qaysi saytlarga yeta oladi? | Operatsion tizim |
+
+Birinchi ikkitasi — Claude Code’ning o‘zida. Uchinchisi — undan pastda,
+operatsion tizim darajasida. Shuning uchun u eng kuchli: agent biror
+qoidani “aylanib o‘tsa” ham, OS devori baribir turadi.
+
+## 2. Tavsiya va majburiyat
+
+Oddiy tilda: “iltimos, server xonasiga kirmang” degan yozuv — tavsiya.
+Eshikdagi qulf — majburiyat. Ikkalasi ham foydali, lekin faqat qulf
+**kafolat** beradi.
+
+Rasmiy hujjat buni bitta jumlada aytadi: **ruxsat qoidalarini Claude
+Code ijro etadi, model emas.** Prompt yoki CLAUDE.md dagi ko‘rsatmalar
+Claude nima qilishga **urinishini** shakllantiradi, lekin Claude Code
+nimaga **ruxsat berishini** o‘zgartirmaydi.
+
+<Versus
+  left={{
+    title: "Tavsiya (model xulqi)",
+    points: [
+      "Prompt, CLAUDE.md, misollar",
+      "Model odatda amal qiladi",
+      "Uzun sessiyada unutilishi mumkin",
+      "Prompt injection uni buzishi mumkin",
+      "Uslub va odatlar uchun yaxshi",
+    ],
+  }}
+  right={{
+    title: "Majburiyat (harness va OS)",
+    points: [
+      "Rejim, allow/ask/deny qoidalari, hooks, sandbox",
+      "Model nima 'xohlashidan' qat'i nazar ishlaydi",
+      "Sessiya uzunligiga bog'liq emas",
+      "Promptdagi hiyla uni o'zgartirmaydi",
+      "Xavfsizlik chegaralari uchun shart",
+    ],
+  }}
+/>
+
+**Amaliy qoida:** “bunday qilsang yaxshi bo‘ladi” — CLAUDE.md’ga.
+“Hech qachon, istisnosiz” — sozlamaga (qoida, hook yoki sandbox).
+
+<Check q="Jamoa CLAUDE.md'ga 'production bazasiga hech qachon ulanma' deb yozdi. Bu yetarlimi?">
+Yo‘q. Bu tavsiya: model odatda amal qiladi, lekin kafolat yo‘q — uzun
+sessiyada unutilishi yoki zararli kontent tufayli buzilishi mumkin.
+Kafolat uchun majburiy qatlam kerak: tegishli buyruqlarga deny qoidasi,
+bloklovchi hook va, eng ishonchlisi, sandbox’da tarmoqni cheklash yoki
+production ma’lumotlarini agent muhitiga umuman bermaslik.
+</Check>
+
+## 3. Olti rejim
+
+Oddiy tilda: rejim — agentga beriladigan **mustaqillik darajasi**.
+Yangi stajyor har qadamni so‘raydi; ishonchli hamkasb mayda narsalarni
+o‘zi hal qiladi; konteyner ichidagi robot esa umuman so‘ramaydi.
+
+| Rejim (sozlama qiymati) | Interfeysda | So‘rovsiz nima ishlaydi |
+| --- | --- | --- |
+| `default` | Manual | Faqat o‘qish |
+| `acceptEdits` | Accept edits | O‘qish, fayl tahrirlari va ish papkasida `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, `sed` |
+| `plan` | Plan | O‘qish; tahrir — reja tasdiqlanguncha yo‘q |
+| `auto` | Auto | Hammasi, lekin fon klassifikatori xavfli harakatni to‘xtatadi |
+| `dontAsk` | Don’t ask | Faqat oldindan ruxsat berilganlar; so‘raladigan hamma narsa **rad** etiladi |
+| `bypassPermissions` | Bypass | Deyarli hammasi, tekshiruvlarsiz |
+
+### 3.1 Qaysi rejimda boshlanadi
+
+Hujjatga ko‘ra yangi versiyalarda (v2.1.283 dan) interaktiv terminal va VS
+Code sessiyasi standart holatda **auto** rejimda ochiladi. Boshqa rejimni
+tanlash:
+
+- bir sessiya uchun: `claude --permission-mode default` (yoki `plan`,
+  `acceptEdits`...);
+- doimiy: sozlamada `permissions.defaultMode`;
+- sessiya ichida: **`Shift+Tab`**.
+
+`Shift+Tab` aylanishi: auto’dan birinchi bosish — Manual’ga, keyin
+**Manual → Accept edits → Plan**, keyin yoqilgan bo‘lsa Bypass va Auto.
+`dontAsk` aylanishda yo‘q — faqat `--permission-mode dontAsk` bilan.
+
+<Callout type="ogoh" title="Loyiha fayli auto va bypass'ni yoqa olmaydi">
+Hujjatga ko‘ra `"auto"` va `"bypassPermissions"` ni `.claude/settings.json`
+yoki `.claude/settings.local.json` da `defaultMode` qilib qo‘ysangiz —
+**ishlamaydi**. Bu himoya: begona repo klon qilinganda u sizni o‘zi
+xavfli rejimga o‘tkaza olmaydi. Ularni faqat foydalanuvchi sozlamasida yoki
+bayroq bilan yoqasiz.
+</Callout>
+
+### 3.2 Qaysi rejim qachon
+
+| Vaziyat | Rejim |
+| --- | --- |
+| Birinchi hafta, notanish loyiha, muhim tizim | **Manual** — har harakatni ko‘rasiz |
+| Katta o‘zgarishdan oldin o‘rganish | **Plan** |
+| Ishonchli loyihada kundalik kodlash | **Accept edits** yoki **Auto** |
+| CI, skript, kuzatuvsiz ish | **dontAsk** + aniq allow ro‘yxati (15-dars) |
+| Internetsiz konteyner yoki VM ichida | **bypassPermissions** — faqat shu yerda |
+
+## 4. Plan rejimi: avval o‘ylash
+
+Oddiy tilda: ta’mirchi devorni buzishdan oldin chizma ko‘rsatadi. Siz
+“ma’qul” demaguningizcha u bolg‘a olmaydi.
+
+Plan rejimida Claude kodni o‘qiydi va o‘rganadi, lekin **reja
+tasdiqlanmaguncha tahrir qilmaydi**. Kirish: `Shift+Tab`, so‘rov boshida
+`/plan` yoki `--permission-mode plan`.
+
+Reja tayyor bo‘lganda uch tanlov chiqadi:
+
+1. **Ha, va auto rejimga o‘t** — reja bo‘yicha mustaqil ishlaydi;
+2. **Ha, tahrirlarni qo‘lda tasdiqlayman** — Manual’da bajaradi;
+3. **Yo‘q, rejalashtirishni davom ettir.**
+
+Rejani tasdiqlashdan oldin **`Ctrl+G`** bilan uni matn muharririda
+ochib, o‘zingiz tahrirlashingiz mumkin: keraksiz qadamni o‘chirish,
+cheklov qo‘shish. Plan rejimi qachon kerakligi va qachon ortiqcha — 6-dars.
+
+## 5. Auto rejimi: klassifikator
+
+Oddiy tilda: auto rejimda har harakatni siz emas, **ikkinchi model** —
+klassifikator — ko‘rib chiqadi. U navbatchi xavfsizlik xodimiga o‘xshaydi:
+oddiy ishlarni o‘tkazib yuboradi, shubhalisini to‘xtatadi.
+
+Hujjatga ko‘ra klassifikator so‘ralgandan **ortiq** narsani, notanish
+infratuzilmaga qaratilgan harakatni yoki Claude o‘qigan zararli kontent
+ta’sirida paydo bo‘lgandek ko‘ringan harakatni bloklaydi. Standart
+holatda bloklanadiganlarga misollar: `curl | bash`, majburiy push
+(force push), `git reset --hard`, `terraform destroy`, production deploy.
+To‘liq ro‘yxat: `claude auto-mode defaults`.
+
+Uchta muhim tafsilot:
+
+- **Keng qoidalar tashlab yuboriladi.** Auto rejimga kirganda `Bash(*)`,
+  `Bash(python*)` kabi interpretator yulduzchalari va paket menejer
+  “run” buyruqlari kabi keng allow qoidalari o‘chadi. `Bash(npm test)`
+  kabi tor qoidalar qoladi.
+- **To‘xtash chegarasi.** Ketma-ket 3 ta yoki sessiyada jami 20 ta
+  bloklashdan keyin auto pauza qiladi va yana sizdan so‘ray boshlaydi.
+- **Kafolat emas.** Hujjat so‘zlari bilan: auto rejimi so‘rovlarni
+  kamaytiradi, lekin **xavfsizlikni kafolatlamaydi**.
+
+<Check q="Auto rejimda Bash(python *) allow qoidangiz ishlamayapti — har python buyrug'i klassifikatordan o'tyapti. Nega?">
+Hujjatga ko‘ra auto rejimga kirishda interpretator yulduzchalari
+(`Bash(python*)` kabi) va boshqa keng allow qoidalari tashlab yuboriladi —
+ular ixtiyoriy kodni ishga tushirishga ruxsat beradi. Tor qoidalar
+(`Bash(python -m unittest *)`) saqlanadi.
+</Check>
+
+## 6. dontAsk va bypassPermissions
+
+**`dontAsk`** — kuzatuvsiz ish uchun: so‘rov chiqishi kerak bo‘lgan har
+qanday harakat **avtomatik rad etiladi**. Ishlaydi faqat: ish
+papkasidagi o‘qish, faqat-o‘qish Bash buyruqlari va allow qoidalariga
+mos kelganlar. CI’da aniq allow ro‘yxati bilan birga ishlatiladi (15-dars).
+
+**`bypassPermissions`** — so‘rovlar va xavfsizlik tekshiruvlari o‘chadi,
+himoyalangan yo‘llarga yozish ham. Deny qoidalari baribir ishlaydi.
+Hujjatdagi ogohlantirishlar:
+
+- faqat **konteyner, VM yoki internetsiz dev konteyner** kabi izolyatsiya
+  qilingan muhitda ishlating, Claude Code asosiy tizimingizga zarar
+  yetkaza olmaydigan joyda;
+- bu rejim **prompt injection** va kutilmagan harakatlardan hech qanday
+  himoya bermaydi;
+- `--dangerously-skip-permissions` — xuddi shu rejim; root yoki sudo
+  bilan ishlamaydi.
+
+<Callout type="xato" title="Klassik xato">
+“So‘rovlar zeriktirdi” deb shaxsiy noutbukda `--dangerously-skip-permissions`
+bilan ishlash. Bitta noto‘g‘ri buyruq yoki o‘qilgan sahifadagi yashirin
+ko‘rsatma — va agent sizning to‘liq huquqlaringiz bilan ishlaydi. So‘rovlarni
+kamaytirishning to‘g‘ri yo‘li — aniq allow qoidalari va sandbox (15-bo‘lim).
+</Callout>
+
+## 7. Qoidalar: allow, ask, deny
+
+Oddiy tilda: uchta ro‘yxat. **Allow** — so‘rovsiz bajar. **Ask** — har
+doim mendan so‘ra. **Deny** — hech qachon.
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(npm run test *)", "Edit(./src/**)"],
+    "ask": ["Bash(git commit *)"],
+    "deny": ["Bash(git push *)", "Read(./.env)"]
+  }
+}
+```
+
+Qoida ko‘rinishi: `Asbob` yoki `Asbob(aniqlovchi)`. Asbob nomlari — 1-darsdagi
+nomlar: `Bash`, `Read`, `Edit`, `WebFetch`, `Agent`...
+
+### 7.1 Tekshirish tartibi
+
+Hujjatdagi asosiy qoida: **avval deny, keyin ask, keyin allow. Shu
+tartibdagi birinchi moslik qaror qiladi, va aniqlik (specificity) tartibni
+o‘zgartirmaydi.**
+
+<Flow nodes={["Harakat", "Deny'ga mosmi? → taqiqlangan", "Ask'ga mosmi? → so'raladi", "Allow'ga mosmi? → so'rovsiz", "Hech biriga mos emas → rejimning standart xulqi"]} caption="Tartib hech qachon o'zgarmaydi: deny har doim birinchi." />
+
+Bundan uchta oqibat:
+
+1. **Deny’dan istisno yo‘q.** `Bash(aws *)` deny bo‘lsa, `Bash(aws s3 ls)`
+   allow uni ochmaydi. Hujjat: allow qoidasi deny’dan istisno o‘yib chiqara
+   olmaydi.
+2. **Ask aniqroq allow’dan ham kuchli.** `Bash(npm test *)` allow va
+   `Bash(npm test --update *)` ask bo‘lsa — `npm test --update x` so‘raladi.
+3. **Yalang‘och asbob nomi deny’da** (masalan, `"Bash"`) asbobni Claude
+   kontekstidan **butunlay olib tashlaydi**.
+
+### 7.2 Hech narsaga mos kelmasa
+
+Manual rejimda: ish papkasidagi o‘qish — so‘rovsiz; papkadan tashqari
+o‘qish, fayl tahriri, faqat-o‘qish bo‘lmagan Bash va veb so‘rovlari —
+so‘raladi. Bash uchun hujjat buni “fail-closed” deb ataydi: mos qoida
+bo‘lmasa, tasdiq kerak.
+
+## 8. Bash qoidalari qanday mos keladi
+
+Bash qoidalari eng ko‘p ishlatiladi va eng ko‘p xato qilinadi.
+
+### 8.1 Yulduzcha
+
+- Yulduzchasiz qoida — **aynan bitta** buyruq: `Bash(npm run build)`.
+- `*` — istalgan matn (bo‘sh joylar bilan ham), istalgan joyda.
+- **Bo‘sh joy muhim:** `Bash(ls *)` → `ls` va `ls -la`, lekin `lsof` emas.
+  `Bash(ls*)` → `lsof` ham.
+- `Bash(ls:*)` — `Bash(ls *)` ning boshqacha yozilishi.
+- `*` ni subbuyruqdan **keyin** qo‘ying: `Bash(git log *)`, `Bash(git *)` emas.
+
+| Qoida | Mos keladi | Mos kelmaydi |
+| --- | --- | --- |
+| `Bash(npm run *)` | `npm run test --watch`, `npm run` | `npm install` |
+| `Bash(git push *)` | `git push`, `git push --force origin main` | `git -C . push` |
+| `Bash(rm -rf *)` | `rm -rf build` | `rm -r -f build` |
+| `Bash(npm run build)` | `npm run build` | `npm run build --prod` |
+
+### 8.2 Murakkab buyruqlar
+
+`&&`, `||`, `;`, `|`, `&` va yangi qator bilan bog‘langan buyruqlar
+**qismlarga bo‘linadi** va har qism alohida tekshiriladi. Deny yoki ask
+istalgan qismga mos kelsa — butun buyruq uchun amal qiladi (`$(...)`
+ichida ham). Hujjat: qoida **har bir qismga alohida** mos kelishi kerak —
+ya’ni `npm test && npm publish` faqat ikkala qism ham ruxsat etilganda
+so‘rovsiz o‘tadi.
+
+### 8.3 O‘ramlar va o‘zgaruvchilar
+
+- Moslashdan oldin `timeout`, `time`, `nice`, `nohup`, `stdbuf`,
+  `command`, `builtin`, `noglob` va yalang‘och `xargs` olib tashlanadi:
+  `timeout 60 git push` → `git push` deny’ga tushadi.
+- `npx`, `docker exec`, `direnv exec` kabi ishga tushirgichlar olib
+  **tashlanmaydi**.
+- Boshidagi `FOO=bar` kabi o‘zgaruvchilar: deny va ask ulardan o‘tib
+  moslashadi (`FOO=bar rm -rf tmp/` → `Bash(rm *)` deny); allow esa faqat
+  ma’lum xavfsiz o‘zgaruvchilardan (masalan `NODE_ENV`) o‘tadi.
+
+### 8.4 So‘rovsiz o‘qish buyruqlari
+
+`ls`, `cat`, `echo`, `pwd`, `head`, `tail`, `grep`, `find`, `wc`,
+`which`, `diff`, `stat`, `du`, `cd` va faqat o‘qiydigan `git` buyruqlari
+har rejimda so‘rovsiz ishlaydi — ular uchun allow yozish shart emas.
+Ro‘yxatni sozlab bo‘lmaydi; birortasini so‘ratmoqchi bo‘lsangiz, ask yoki
+deny qoidasi qo‘shasiz.
+
+## 9. Bash qoidalari xavfsizlik chegarasi emas
+
+Bu — darsning eng muhim bo‘limi.
+
+Oddiy tilda: eshik qulfini qo‘ydingiz, lekin deraza ochiq qolgan.
+`Bash(git push *)` deny — eshik qulfi. U Claude **odatda** yozadigan
+buyruqni to‘xtatadi. Lekin xuddi shu dasturni boshqa yo‘l bilan
+chaqirish mumkin.
+
+Hujjat buni ochiq aytadi: Bash qoidasi dasturni **boshqa shaklda**
+chaqirishga mos kelmaydi, shuning uchun deny yoki ask qoidasi Claude odatda
+yozadigan chaqiruvni qamraydi va **dastur atrofidagi xavfsizlik chegarasi
+emas**.
+
+| Qoida | Aylanib o‘tish yo‘li |
+| --- | --- |
+| `Bash(git push *)` deny | `git -C . push`, `git -c x=y push` |
+| `Bash(curl *)` deny | `/usr/bin/curl ...`, `sh -c 'curl ...'` |
+| `Bash(./deploy.sh *)` deny | `sh deploy.sh`, `bash ./deploy.sh` |
+| `Read(./.env)` deny | `python -c "print(open('.env').read())"`, `grep -r PAROL .` |
+
+Amaliyotdagi `tekshir.py` oxirida aynan shunday holatlar ko‘rsatiladi.
+
+**Nima qilish kerak:** Bash qoidalari — **qulaylik va birinchi to‘siq**
+uchun. Haqiqiy chegara kerak bo‘lsa — **sandbox** (14-bo‘lim) va
+**hooks** (12-dars). Hujjatning tavsiyasi: ikkalasini birga ishlating —
+prompt injection Claude qarorini chetlab o‘tsa ham, sandbox cheklovlari
+baribir turadi.
+
+<Check q="Siz Bash(curl *) ni deny qildingiz va endi tarmoq xavfsiz deb hisoblaysiz. Nima xato?">
+Bu qoida faqat `curl ...` ko‘rinishidagi chaqiruvni to‘xtatadi.
+`/usr/bin/curl`, `sh -c 'curl ...'`, `wget`, Python yoki Node skripti
+orqali so‘rov — bularning hech biri mos kelmaydi. Hujjat: Bash qoidalari
+xavfsizlik chegarasi emas. Tarmoqni haqiqatan cheklash uchun sandbox’ning
+tarmoq allowlist’i kerak.
+</Check>
+
+## 10. Fayl qoidalari: Read va Edit
+
+Oddiy tilda: fayl qoidalari — “qaysi papkaga kirish mumkin” ro‘yxati.
+Ular `.gitignore` sintaksisida yoziladi.
+
+| Yozilishi | Ma’nosi |
+| --- | --- |
+| `//etc/hosts` | Mutlaq yo‘l |
+| `~/.ssh/**` | Uy papkasiga nisbatan |
+| `/config/**` | Sozlama manbasiga nisbatan (loyiha sozlamasida — loyiha ildizi) |
+| `./src/**` yoki `src/**` | Joriy papkaga nisbatan |
+| `*` | Bitta papka ichida |
+| `**` | Istalgan chuqurlikda |
+
+Hujjatdagi muhim tafsilotlar:
+
+- `.env` va `**/.env` — bir xil: **istalgan chuqurlikdagi** `.env`.
+  Aniqlik uchun `Read(**/.env)` deb yozish qulay.
+- **`Edit` qoidalari fayl tahrirlaydigan barcha o‘rnatilgan asboblarga**
+  amal qiladi. `Write(...)` deb alohida yozish kerak emas.
+- **`Read` deny tahrirni ham bloklaydi** — o‘sha yo‘lda `Edit` va `Write`
+  ham, yangi fayl yaratish ham taqiqlanadi.
+- Read va Edit deny **Bash’dagi taniqli fayl buyruqlariga** ham amal qiladi:
+  `cat`, `head`, `tail`, `sed`, `tee` va `>` yo‘naltirish nishonlari.
+  `cat .env` → taqiqlangan.
+- Lekin **faylni nomlamasdan o‘qiydigan** buyruqlarga (`grep -r pattern .`)
+  va faylni o‘zi ochadigan skriptlarga (Python, Node) amal **qilmaydi**.
+- **`.claudeignore` ning hech qanday ta’siri yo‘q.** Eski qo‘llanmalarda
+  uchraydi — uning o‘rniga `Read` deny qoidalari.
+
+<Callout type="ogoh" title="Sirlarni himoyalash retsepti">
+`Read(**/.env)` va `Read(./secrets/**)` deny — birinchi qatlam. Lekin 9-bo‘lim
+sababli bu yetarli emas: sandbox’da `filesystem.denyRead` bilan o‘sha
+yo‘llarni OS darajasida yoping. Eng yaxshisi — haqiqiy production sirlarini
+umuman ish kompyuteridagi loyiha papkasida saqlamaslik.
+</Callout>
+
+## 11. Veb va boshqa asboblar
+
+- **`WebFetch(domain:docs.python.org)`** — aniq domen.
+  `WebFetch(domain:*.example.com)` — istalgan subdomen (lekin
+  `example.com` ning o‘zi emas). `domain:*` — hammasi.
+- Hujjatdagi ogohlantirish: **faqat WebFetch’ni cheklash tarmoqni
+  cheklamaydi** — Bash ruxsat etilgan bo‘lsa, Claude `curl`, `wget` va
+  boshqa vositalar bilan istalgan manzilga chiqa oladi.
+- **MCP:** `mcp__github` (butun server), `mcp__github__*`, yoki aniq asbob
+  `mcp__github__create_issue` (13-dars).
+- **Subagentlar:** `Agent(Explore)`, `Agent(my-agent)` (11-dars).
+
+## 12. Qoidalar qayerda yashaydi
+
+2-darsdagi fayllar xaritasini eslang. Ruxsat qoidalari shu fayllarning
+`permissions` qismida turadi:
+
+| Fayl | Kimga | Kim ko‘radi |
+| --- | --- | --- |
+| Tashkilot (managed) sozlamasi | Butun tashkilot | Administrator boshqaradi |
+| `--settings` bayrog‘i | Bir ishga tushirish | — |
+| `.claude/settings.local.json` | Siz, shu loyihada | Faqat siz |
+| `.claude/settings.json` | Jamoa, shu loyihada | Git orqali hamma |
+| `~/.claude/settings.json` | Siz, hamma loyihada | Faqat siz |
+
+Ikkita qoida hujjatdan:
+
+- **Ro‘yxatlar birlashadi.** `permissions.allow` bir nechta faylda bo‘lsa,
+  Claude Code ularni **qo‘shib** ishlatadi — birini tanlamaydi.
+  `defaultMode` kabi yagona qiymatlarda esa eng yuqori daraja yutadi.
+- **Istalgan darajadagi deny ustun.** Foydalanuvchi sozlamasi allow qilsa-yu,
+  loyiha deny qilsa — taqiqlanadi; va aksincha. Tashkilot deny’ini hech
+  narsa ochmaydi.
+
+Yana ikki amaliy tafsilot:
+
+- **“Ha, va boshqa so‘rama”** tugmasi Bash va WebFetch uchun qoidani
+  `.claude/settings.local.json` ga (git repo ildizida) yozadi. Fayl
+  tahriri ruxsatlari saqlanmaydi.
+- **`/permissions`** — barcha qoidalarni **qaysi fayldan kelgani** bilan
+  ko‘rsatadi. Qoida kutilganidek ishlamasa, birinchi qaraladigan joy.
+
+<Callout type="info" title="Begona repo va workspace trust">
+Loyihadagi `permissions.allow` qoidalari faqat siz papkaga **ishonch**
+bildirganingizdan keyin (trust oynasi) ishlaydi. Deny va ask esa darhol.
+Ya’ni klon qilingan repo o‘ziga keng ruxsat berib qo‘ya olmaydi — lekin
+o‘zini cheklay oladi.
+</Callout>
+
+## 13. Himoyalangan yo‘llar
+
+Ba’zi fayllar shunchalik xavfliki, Claude Code ularga yozishni alohida
+himoya qiladi. Hujjatdagi ro‘yxatdan:
+
+- **Papkalar:** `.git`, `.vscode`, `.idea`, `.husky`, `.claude`
+  (ba’zi istisnolar bilan), `.devcontainer`...
+- **Fayllar:** `.bashrc`, `.zshrc`, `.profile`, `.gitconfig`, `.npmrc`,
+  `.mcp.json`, `.claude.json`, `.pre-commit-config.yaml`...
+
+Nega? Bu fayllar orqali keyingi har bir buyruqqa, har bir git commit’ga
+yoki keyingi Claude sessiyasiga ta’sir qilish mumkin. Manual va Accept
+edits rejimlarida ularga yozish **so‘raladi**, `dontAsk` da — rad etiladi.
+`permissions.allow` ularni oldindan tasdiqlay **olmaydi**. Faqat
+`bypassPermissions` ularga so‘rovsiz yozadi — bu uning xavfli ekanining
+yana bir sababi.
+
+## 14. Sandbox: operatsion tizim devori
+
+Oddiy tilda: qoidalar — qorovulning ro‘yxati. Sandbox — binoning o‘zi:
+devorlar va eshiklar. Qorovulni aldash mumkin, devordan o‘tib bo‘lmaydi.
+
+### 14.1 Nima qiladi
+
+Sandbox **Bash** (va PowerShell, Monitor) buyruqlari hamda ular ishga
+tushirgan jarayonlarni OS darajasida cheklaydi:
+
+- **Fayllar:** yozish — standart holatda faqat ish papkasi, vaqtinchalik
+  papka va qo‘shilgan papkalar. O‘qish — kompyuterning ko‘p qismi (`~/.ssh`
+  ham!), agar `denyRead` bilan yopmasangiz.
+- **Tarmoq:** to‘g‘ridan-to‘g‘ri yo‘l yo‘q; har so‘rov proksi orqali
+  domen bo‘yicha tekshiriladi. Ruxsat etilgan domenlar boshida **bo‘sh**.
+
+Qamramaydi: Claude’ning `Read`, `Edit`, `Write` asboblari, WebFetch, MCP
+serverlari va hooks — ular ruxsat qoidalari bilan boshqariladi.
+
+### 14.2 Qayerda ishlaydi va qanday yoqiladi
+
+| Tizim | Holat |
+| --- | --- |
+| macOS | Ishlaydi (Seatbelt) |
+| Linux, WSL 2 | Ishlaydi (bubblewrap + socat) |
+| Native Windows | **Yo‘q** — buyruqlar sandbox’siz |
+
+Yoqish: sessiyada **`/sandbox`** yoki sozlamada `"sandbox": {"enabled": true}`.
+Standart holatda o‘chiq. Muhim: hujjatga ko‘ra sandbox ishga tusha olmasa
+(paket yetishmasa), Claude Code **sandbox’siz davom etadi** —
+`"failIfUnavailable": true` bilan buning o‘rniga to‘xtaydi.
+
+### 14.3 Asosiy sozlamalar
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": ["~/.ssh", "~/.aws"],
+      "allowWrite": ["/tmp/build"]
+    },
+    "network": {
+      "allowedDomains": ["pypi.org", "files.pythonhosted.org"]
+    }
+  }
+}
+```
+
+| Kalit | Nima qiladi |
+| --- | --- |
+| `autoAllowBashIfSandboxed` | Sandbox’dagi buyruqlar so‘rovsiz (standart `true`); deny qoidalari baribir ishlaydi |
+| `allowUnsandboxedCommands` | Claude buyruqni sandbox’dan **tashqarida** qayta urinishiga ruxsat (standart `true`); `false` — bu yo‘l yopiladi |
+| `excludedCommands` | Sandbox’dan chiqarib qo‘yiladigan buyruqlar — ular **to‘liq huquqingiz** bilan ishlaydi |
+| `network.allowedDomains` / `deniedDomains` | Tarmoq oq va qora ro‘yxati |
+| `filesystem.denyRead` / `allowWrite` | Qo‘shimcha o‘qish taqiqlari va yozish ruxsatlari |
+
+### 14.4 Cheklovlari
+
+Hujjat halol: sandbox **xavfni kamaytiradi, lekin to‘liq izolyatsiya
+chegarasi emas**. Va: samarali sandbox uchun **fayl tizimi ham, tarmoq
+ham** cheklangan bo‘lishi kerak — faqat bittasi yetarli emas. Proksi
+o‘zgaruvchilarini e’tiborsiz qoldiradigan vositalar (oddiy `ssh`, ko‘p
+baza drayverlari) ruxsat etilgan hostga ham ulana olmaydi — buni bilib
+qo‘ying.
+
+<Check q="Sandbox yoqilgan, lekin network.allowedDomains bo'sh. Agent pip install qilmoqchi. Nima bo'ladi?">
+Tarmoq proksi orqali tekshiriladi va ro‘yxatda bo‘lmagan host uchun Manual
+va Accept edits rejimlarida so‘rov chiqadi (auto’da rad etiladi, agar
+oldindan tasdiqlanmagan bo‘lsa; dontAsk’da rad etiladi). Doimiy yechim —
+`pypi.org` va `files.pythonhosted.org` ni `allowedDomains` ga qo‘shish.
+</Check>
+
+## 15. Jamoa uchun tayyor sozlama
+
+Oddiy tilda: hamma qatlamni birlashtiramiz. Quyidagi namuna — o‘rtacha
+Python loyihasi uchun boshlang‘ich nuqta. Uni o‘z loyihangizga moslang.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest *)",
+      "Bash(ruff check *)",
+      "Bash(ruff format *)",
+      "Edit(./src/**)",
+      "Edit(./tests/**)"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "Bash(pip install *)",
+      "Edit(./migrations/**)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(rm -rf *)",
+      "Read(**/.env)",
+      "Read(./secrets/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "network": {
+      "allowedDomains": ["pypi.org", "files.pythonhosted.org", "docs.python.org"]
+    },
+    "filesystem": {
+      "denyRead": ["~/.ssh", "~/.aws"]
+    }
+  }
+}
+```
+
+Bu sozlamaning mantig‘i:
+
+- **Allow** — faqat **tor** va tez-tez kerak bo‘ladigan buyruqlar: test,
+  lint, kod papkalari. Interpretator yulduzchasi (`Bash(python *)`) yo‘q.
+- **Ask** — qaytarib bo‘lmaydigan yoki tashqariga ta’sir qiladigan, lekin
+  ba’zan kerak bo‘ladigan narsalar.
+- **Deny** — hech qachon kerak bo‘lmaydigan narsalar. Ular **birinchi
+  to‘siq**, chegara emas.
+- **Sandbox** — haqiqiy chegara: tarmoq faqat kerakli domenlarga, sirli
+  papkalar yopiq.
+
+Bu fayl `.claude/settings.json` sifatida commit qilinadi — butun jamoa
+bir xil qoidalar bilan ishlaydi. Shaxsiy qo‘shimchalar —
+`.claude/settings.local.json` da.
+
+## 16. Afsonalar va haqiqat
+
+| Afsona | Haqiqat |
+| --- | --- |
+| “CLAUDE.md’dagi taqiq — xavfsizlik” | Tavsiya. Majburiyat — qoidalar, hooks, sandbox |
+| “Aniqroq allow umumiy deny’ni yengadi” | Yo‘q: deny → ask → allow, aniqlik tartibni o‘zgartirmaydi |
+| “`Bash(git push *)` deny — push imkonsiz” | `git -C . push` mos kelmaydi; qoida chegara emas |
+| “`.claudeignore` sirlarni yashiradi” | Ta’siri yo‘q; `Read` deny qoidasi kerak |
+| “`Read(.env)` deny — sir xavfsiz” | `grep -r` va skriptlar uni chetlab o‘tadi; sandbox kerak |
+| “Loyiha faylida `defaultMode: bypassPermissions` qo‘yaman” | Loyiha va local fayllarda auto va bypass ishlamaydi |
+| “Auto rejim xavfsiz” | Hujjat: so‘rovlarni kamaytiradi, xavfsizlikni kafolatlamaydi |
+| “Sandbox yoqdim — hammasi izolyatsiya qilingan” | Faqat Bash buyruqlari; to‘liq chegara emas; ishga tushmasa sukut bilan sandbox’siz |
+
+## 17. Butun dars o‘nta gapda
+
+1. Uch qatlam: **rejim** (mustaqillik), **qoidalar** (aniq ruxsatlar),
+   **sandbox** (OS devori).
+2. CLAUDE.md — **tavsiya**; qoidalar, hooks va sandbox — **majburiyat**.
+3. Yangi versiyalarda standart rejim — **auto**; birinchi hafta va muhim
+   tizimlarda **Manual** bilan boshlang.
+4. **Plan** — avval reja, keyin tahrir; `Ctrl+G` bilan rejani tahrirlang.
+5. **bypassPermissions** — faqat izolyatsiya qilingan konteyner yoki VM’da.
+6. Tartib: **deny → ask → allow**; birinchi moslik qaror qiladi.
+7. Bash qoidalarida **bo‘sh joy va yulduzcha** muhim; murakkab buyruqning
+   har qismi alohida tekshiriladi.
+8. **Bash qoidalari xavfsizlik chegarasi emas** — boshqa shakldagi
+   chaqiruv ularni chetlab o‘tadi.
+9. Ro‘yxatlar fayllar orasida **birlashadi**, istalgan darajadagi **deny
+   ustun**; `/permissions` manbani ko‘rsatadi.
+10. Haqiqiy chegara — **sandbox**: fayl tizimi **va** tarmoq birga.
+
+## 18. Amaliyot
+
+Amaliyot — **do‘kon** loyihasi uchun `.claude/settings.json` yozish. Sizda
+8 ta talab bor (testlar, git, sirlar, xavfli buyruqlar, migratsiyalar,
+veb...). Qoidalaringizni **simulyator** tekshiradi — u hujjatdagi qoidalar
+tartibini takrorlaydi. Keyin xuddi shu sozlama bilan haqiqiy sessiyada
+sinab ko‘rasiz. Faqat Python 3.9+ kerak.
+
+<Download file="dokon.zip" title="Amaliyot fayllarini yuklab olish" files="ruxsat.py, tekshir.py, README.md, .claude/settings.json, src/, tests/, migrations/, .env (soxta)" />
+
+| Fayl | Nima |
+| --- | --- |
+| `.claude/settings.json` | **Siz to‘ldirasiz** |
+| `ruxsat.py` | Simulyator: `python ruxsat.py Bash "git push"` |
+| `tekshir.py` | Qabul tekshiruvi: to‘qqizta tekshiruv |
+| `README.md` | Talablar va topshiriqlar |
+
+<Task title="1-daraja: qoidalarni yozing">
+README’dagi 8 ta talabni o‘qing va `.claude/settings.json` ni to‘ldiring.
+Har qoidani `python ruxsat.py ...` bilan alohida sinang, keyin `python
+tekshir.py`. Maqsad — `Jami: 9/9 OK`. Keng ruxsatlarsiz:
+`Bash(python *)` yozish oson, lekin tekshiruv uni qabul qilmaydi.
+</Task>
+
+<Task title="2-daraja: chegarani ko'ring">
+`tekshir.py` oxiridagi “ma’lumot uchun” qatorlarini o‘qing. `git -C . push`
+nega taqiqlanmadi? `grep -r PAYMENT_SECRET .` nega so‘rovsiz o‘tdi? Har
+biri uchun 9 yoki 10-bo‘limdan javob toping va qaysi qatlam (hook yoki
+sandbox) uni haqiqatan to‘xtatishini yozing.
+</Task>
+
+<Task title="3-daraja: haqiqiy sessiya">
+`git init && git add . && git commit -m boshlang‘ich`, keyin `claude
+--permission-mode default`. `/permissions` da qoidalaringiz manbasi bilan
+ko‘rinishini tekshiring. Claude’dan `.env` ni o‘qishni so‘rang — rad
+javobini kuzating. Testlarni ishga tushirtiring — so‘rovsiz bo‘lishi kerak.
+Keyin `Shift+Tab` bilan **Plan** rejimiga o‘ting va “deploy jarayonini
+tushuntir va yaxshilash rejasini tuz” deng — tahrir bo‘lmasligini kuzating.
+</Task>
+
+<Task title="4-daraja: sandbox (macOS, Linux yoki WSL 2)">
+`/sandbox` ni yoqing va Claude’dan `curl -I https://example.com` ni ishga
+tushirishni so‘rang. Tarmoq so‘rovi qanday ko‘rinishda so‘raldi? Keyin
+`example.com` ni `sandbox.network.allowedDomains` ga qo‘shib, farqni
+ko‘ring.
+</Task>
+
+**Tekshiruv mezoni:** `python tekshir.py` oxirida `Jami: 9/9 OK`.
+
+<Deep title="Simulyator qanchalik aniq">
+`ruxsat.py` — o‘quv modeli, Claude Code’ning o‘zi emas. U hujjatda
+yozilgan qoidalarni takrorlaydi: deny → ask → allow tartibi, `*` va bo‘sh
+joy semantikasi, `:*` yozuvi, murakkab buyruqlarni bo‘lish, o‘ramlarni
+olib tashlash, o‘zgaruvchi prefikslari, faqat-o‘qish buyruqlari,
+`.gitignore` uslubidagi yo‘llar, Read deny’ning Edit va `cat` ga ta’siri,
+WebFetch domenlari.
+
+U hujjatdagi 44 ta misol bilan solishtirib tekshirilgan. Tekshiruv esa
+to‘g‘ri sozlamaga kiritilgan 29 ta ataylab xatoni (push deny’siz,
+`Bash(*)`, `Bash(python:*)`, bitta yulduzchali `secrets/*`, anchored
+`.env`, bypass rejimi va boshqalar) — hammasini ushladi.
+
+Chekka holatlarda (masalan, qo‘shtirnoq ichidagi `;`) haqiqiy Claude Code
+boshqacha qaror qilishi mumkin. Shuning uchun 3-daraja — haqiqiy sessiyada
+`/permissions` bilan tekshirish.
+</Deep>
+
+## 19. Nazorat savollari
+
+<QA q="Ruxsat qoidalari qanday tartibda tekshiriladi va 'aniqroq qoida yutadi' degan gap to'g'rimi?">
+Deny, keyin ask, keyin allow; shu tartibdagi birinchi moslik qaror qiladi.
+Aniqlik tartibni o‘zgartirmaydi: `Bash(aws *)` deny bo‘lsa, `Bash(aws s3
+ls)` allow uni ochmaydi.
+</QA>
+
+<QA q="Bash(ls *) va Bash(ls*) ning farqi nima?">
+`Bash(ls *)` — `ls` va `ls -la` ga mos, `lsof` ga emas (bo‘sh joy so‘z
+chegarasini belgilaydi). `Bash(ls*)` — `lsof` ga ham mos.
+</QA>
+
+<QA q="npm test && npm publish buyrug'i qachon so'rovsiz o'tadi?">
+Faqat ikkala qism ham alohida ruxsat etilgan bo‘lsa (allow qoidasi yoki
+faqat-o‘qish buyrug‘i). Hujjat: qoida har bir qismga alohida mos kelishi
+kerak. Qismlardan biri deny’ga tushsa — butun buyruq taqiqlanadi.
+</QA>
+
+<QA q="Nega Bash qoidalari xavfsizlik chegarasi emas? Ikki misol keltiring.">
+Ular Claude odatda yozadigan chaqiruvni qamraydi, dasturning o‘zini emas.
+`Bash(git push *)` deny `git -C . push` ni to‘xtatmaydi; `Bash(curl *)` deny
+`/usr/bin/curl` yoki `sh -c 'curl ...'` ni to‘xtatmaydi. Chegara uchun —
+sandbox va hooks.
+</QA>
+
+<QA q="Read(**/.env) deny qaysi holatlarda sirni himoya qiladi va qaysilarida yo'q?">
+Himoya qiladi: Claude’ning Read asbobi, Edit/Write (Read deny tahrirni
+ham bloklaydi), `cat`, `head`, `tail`, `sed`, `tee` va yo‘naltirishlar.
+Himoya qilmaydi: faylni nomlamasdan o‘qiydigan `grep -r ... .` va faylni
+o‘zi ochadigan Python yoki Node skripti. Ularga qarshi — sandbox
+`denyRead`.
+</QA>
+
+<QA q="Foydalanuvchi sozlamasida Bash(git *) allow, loyihada Bash(git push *) deny. Push nima bo'ladi?">
+Taqiqlanadi. Ro‘yxatlar birlashadi va deny har doim birinchi tekshiriladi;
+istalgan darajadagi deny ustun.
+</QA>
+
+<QA q="Loyihaning .claude/settings.json fayliga defaultMode: bypassPermissions yozildi. Nima bo'ladi?">
+Hech narsa: hujjatga ko‘ra auto va bypassPermissions loyiha va local
+sozlamalarida `defaultMode` sifatida ishlamaydi. Bu begona repo sizni
+xavfli rejimga o‘tkaza olmasligi uchun.
+</QA>
+
+<QA q="Auto rejim bilan Manual rejimning asosiy farqi nima va auto qachon to'xtaydi?">
+Manual’da xavfli harakatlarni siz tasdiqlaysiz; auto’da ikkinchi model —
+klassifikator — qaror qiladi. Ketma-ket 3 yoki jami 20 bloklashdan keyin
+auto pauza qilib, yana so‘ray boshlaydi.
+</QA>
+
+<QA q="Sandbox nimani cheklaydi va nimani cheklamaydi?">
+Cheklaydi: Bash (va PowerShell, Monitor) buyruqlari va ularning
+jarayonlari — fayllarga yozish/o‘qish va tarmoq. Cheklamaydi: Claude’ning
+Read/Edit/Write asboblari, WebFetch, MCP serverlari, hooks — ular ruxsat
+qoidalari bilan boshqariladi.
+</QA>
+
+<QA q="Sandbox o'rnatilgan, lekin bubblewrap paketi yo'q. Nima bo'ladi va buni qanday oldini olasiz?">
+Hujjatga ko‘ra standart holatda Claude Code buyruqlarni sandbox’siz
+ishlatishda davom etadi. Buni oldini olish uchun `sandbox.failIfUnavailable:
+true` — sandbox ishga tushmasa, Claude Code to‘xtaydi.
+</QA>
+
+<QA q="'Ha, va boshqa so'rama' bosilganda qoida qayerga yoziladi?">
+Bash va WebFetch uchun — git repo ildizidagi `.claude/settings.local.json`
+ga. Fayl tahriri ruxsatlari esa faylga saqlanmaydi, sessiya oxirigacha
+amal qiladi.
+</QA>
+
+## 20. Lug‘at
+
+| Atama | Ma’nosi |
+| --- | --- |
+| Ruxsat rejimi | Agentning mustaqillik darajasi: Manual, Accept edits, Plan, Auto, dontAsk, Bypass |
+| Klassifikator | Auto rejimda harakatlarni ko‘rib chiquvchi ikkinchi model |
+| Allow / Ask / Deny | So‘rovsiz / har doim so‘ra / hech qachon |
+| Aniqlovchi (specifier) | Qoida qavs ichidagi qismi: `Bash(git push *)` dagi `git push *` |
+| Murakkab buyruq | `&&`, `;`, `\|` va boshqalar bilan bog‘langan buyruqlar |
+| O‘ram (wrapper) | `timeout`, `nohup` kabi boshqa buyruqni ishga tushiruvchi |
+| Himoyalangan yo‘l | `.git`, `.bashrc` kabi alohida himoyalangan fayl va papkalar |
+| Workspace trust | Papkaga ishonch: loyiha allow qoidalari shundan keyin ishlaydi |
+| Sandbox | OS darajasidagi fayl va tarmoq cheklovi |
+| Prompt injection | Agent o‘qigan matndagi yashirin ko‘rsatma |
+| Defense in depth | Bir nechta mustaqil himoya qatlami |
+
+## 21. Manbalar
+
+Ma’lumotlar 2026-yil oktyabr holatiga, Claude Code rasmiy hujjatlaridan
+(code.claude.com/docs/en/):
+
+- “Permissions” — qoidalar sintaksisi, tartib, Bash cheklovlari, Read/Edit,
+  WebFetch, sozlamalar ustuvorligi (permissions)
+- “Permission modes” — rejimlar, plan, auto, dontAsk, bypass, himoyalangan
+  yo‘llar (permission-modes)
+- “Sandboxing” — sandbox imkoniyatlari, sozlamalar, cheklovlar (sandboxing)
+- “Settings” — sozlama fayllari va ro‘yxatlarning birlashishi (settings)
+- “Security” — umumiy xavfsizlik tavsiyalari (security)
+
+Amaliyot raqamlari (44 hujjat misoli, 9 tekshiruv, 29 mutatsiya) — kurs
+amaliyotida o‘lchangan.
+
+<Callout type="maslahat" title="Keyingi qadam">
+Endi agent xavfsiz chegaralar ichida. **4-darsda** uning eng qimmatli
+resursi — **kontekst oynasi** bilan ishlashni o‘rganasiz: `/context`,
+`/compact`, `/clear`, `/rewind` va sessiyalarni davom ettirish.
+</Callout>

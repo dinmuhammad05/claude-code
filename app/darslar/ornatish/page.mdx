@@ -373,9 +373,11 @@ Nimalarga e’tibor bering:
   harakatlarni siz boshqarasiz.
 
 <Callout type="ogoh" title="Birinchi sessiya — Manual rejimda">
-Birinchi haftada ruxsat so‘rovlarini **o‘qib** “Ha” deng. Shunda agent
-qanday buyruqlarni, qanday tartibda ishlatishini o‘rganasiz. Rejimlar va
-so‘rovlarni kamaytirish — 3-darsda.
+Yangi versiyalarda sessiya standart holatda **auto** rejimda ochiladi:
+so‘rov o‘rniga fon klassifikatori qaror qiladi. Birinchi haftada
+`claude --permission-mode default` bilan Manual rejimda ishlang va ruxsat
+so‘rovlarini **o‘qib** “Ha” deng. Shunda agent qanday buyruqlarni, qanday
+tartibda ishlatishini o‘rganasiz. Rejimlar — 3-darsda.
 </Callout>
 
 ## 9. /init va birinchi CLAUDE.md
@@ -557,7 +559,7 @@ toping va tuzating — ayniqsa `ANTHROPIC_API_KEY` haqidagisini.
 
 <Task title="2-daraja: birinchi sessiya">
 `git init && git add . && git commit -m "boshlang'ich holat"`, keyin
-`claude`. 8-bo‘limdagi tartibda: loyiha haqida uchta savol (bittasida
+`claude --permission-mode default` (Manual rejim). 8-bo‘limdagi tartibda: loyiha haqida uchta savol (bittasida
 `@eslatma.py`), `!python -m unittest`, `/status`. Bu bosqichda hech
 narsani o‘zgartirtirmang.
 </Task>

@@ -53,7 +53,7 @@ python muhit.py
 
 ```bash
 git init && git add . && git commit -m "boshlang'ich holat"
-claude
+claude --permission-mode default   # Manual rejim: har harakat so‘raladi
 ```
 
 Sessiyada: loyiha haqida uchta savol bering (darsdagi misollar), bittasida

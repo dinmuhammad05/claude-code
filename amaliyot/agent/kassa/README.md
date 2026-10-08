@@ -51,7 +51,8 @@ o‘qishi **shart** deb o‘ylaysiz.
 
 ### 2-daraja: A sessiya — noaniq vazifa
 
-Manual (standart) rejimda Claude Code’ni oching va **faqat shuni** yozing:
+Claude Code’ni Manual rejimda oching (`claude --permission-mode default`)
+va **faqat shuni** yozing:
 
 ```text
 testlar o'tmayapti, tuzatib ber

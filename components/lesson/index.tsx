@@ -91,24 +91,30 @@ export function Step({
 
 /** Oddiy zanjirli oqim: Client → LB → API → DB */
 export function Flow({ nodes, caption }: { nodes: string[]; caption?: string }) {
+  // Qadamlar ustma-ust: telefonda ham yon tomonga aylantirmasdan o'qiladi
   return (
-    <figure className="my-6 overflow-x-auto rounded-[var(--skin-radius)] border border-[var(--skin-border)] bg-[var(--skin-surface)] p-4">
-      <div className="flex min-w-max items-center gap-2">
+    <figure className="my-6 rounded-[var(--skin-radius)] border border-[var(--skin-border)] bg-[var(--skin-surface)] p-4">
+      <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {nodes.map((node, i) => (
-          <div key={node} className="flex items-center gap-2">
-            <span className="rounded-md border border-[var(--skin-border)] bg-[var(--skin-surface-2)] px-3 py-2 text-xs font-medium whitespace-nowrap">
-              {node}
-            </span>
-            {i < nodes.length - 1 ? (
-              <span aria-hidden className="text-[var(--skin-accent)]">
-                →
+          <li key={node + i} className="flex gap-3" style={{ margin: 0 }}>
+            <div className="flex flex-col items-center">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--skin-accent)] font-[family-name:var(--skin-mono)] text-[11px] font-bold text-[var(--skin-accent-text)]">
+                {i + 1}
               </span>
-            ) : null}
-          </div>
+              {i < nodes.length - 1 ? (
+                <span aria-hidden className="my-1 w-px flex-1 bg-[var(--skin-border)]" />
+              ) : null}
+            </div>
+            <div className={`text-[0.9em] leading-snug ${i < nodes.length - 1 ? "pb-3" : ""} pt-0.5`}>
+              {node}
+            </div>
+          </li>
         ))}
-      </div>
+      </ol>
       {caption ? (
-        <figcaption className="mt-3 text-xs text-[var(--skin-muted)]">{caption}</figcaption>
+        <figcaption className="mt-3 border-t border-[var(--skin-border)] pt-3 text-xs text-[var(--skin-muted)]">
+          {caption}
+        </figcaption>
       ) : null}
     </figure>
   );
