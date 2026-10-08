@@ -142,13 +142,6 @@ body {
    KONTENTNI HIMOYALASH (lib/site.ts -> protection)
    Eslatma: bu faqat tasodifiy nusxalashni qiyinlashtiradi.
    ------------------------------------------------------------------ */
-.lesson-prose,
-.lesson-prose * {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
 
 /* Chop etish va "PDF ga saqlash" — bo'sh sahifa va ogohlantirish */
 @media print {
@@ -181,5 +174,6 @@ body {
   color: var(--skin-accent);
 }
 [data-skin="cc"] .lesson-prose pre {
+  padding-right: 4.5rem;
   background: #0f0f0e;
 }

@@ -27,7 +27,7 @@ const provider = {
 export function lessonMetadata(slug: string): Metadata {
   const l = lessonBySlug(slug)!;
   const og = `/og-${slug}.png`;
-  const description = `${l.summary} Bepul, o‘zbek tilida: rasmiy hujjatlarga tayangan tushuntirish, amaliy mashq va tekshiruv savollari.`;
+  const description = `${l.summary} Bepul, o‘zbek tilida.`;
   return {
     title: l.title,
     description,
@@ -36,6 +36,11 @@ export function lessonMetadata(slug: string): Metadata {
     openGraph: {
       type: "article",
       url: lessonPath(slug),
+      locale: "uz_UZ",
+      siteName: site.name,
+      publishedTime: l.published,
+      modifiedTime: l.updated ?? l.published,
+      authors: [site.author.portfolio],
       title: l.title,
       description,
       images: [{ url: og, width: 1200, height: 630, alt: l.title }],
@@ -85,6 +90,8 @@ export function lessonJsonLd(slug: string) {
         image: absUrl(`/og-${l.slug}.png`),
         inLanguage: "uz",
         isAccessibleForFree: true,
+        datePublished: l.published,
+        dateModified: l.updated ?? l.published,
         author,
         publisher: provider,
         keywords: l.topics.join(", "),

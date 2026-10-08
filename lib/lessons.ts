@@ -16,6 +16,9 @@ export type Lesson = {
   minutes: number;
   /** Darsning kalit tushunchalari */
   topics: string[];
+  /** Nashr va oxirgi tahrir sanasi (YYYY-MM-DD) — qidiruv tizimlari uchun */
+  published?: string;
+  updated?: string;
 };
 
 /**
@@ -33,6 +36,8 @@ export const lessons: Lesson[] = [
     level: "boshlang'ich",
     minutes: 60,
     topics: ["Agent sikli", "Asboblar (tools)", "Token", "Kontekst oynasi", "Tekshiriladigan maqsad"],
+    published: "2026-10-08",
+    updated: "2026-10-08",
   },
   {
     order: 2,

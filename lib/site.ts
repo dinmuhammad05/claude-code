@@ -31,8 +31,8 @@ export const site = {
     noindex: false,
     /** "Barcha darslarni yuklab olish" tugmasi (offline nusxa) */
     offlineDownload: false,
-    /** Nusxa ko'chirish va o'ng tugmani cheklash */
-    copyGuard: true,
+    /** Nusxa ko'chirish va o'ng tugmani cheklash (kursda o'chiq: buyruq va kodni nusxalash kerak) */
+    copyGuard: false,
     /** Chop etishni (Ctrl+P, PDF ga saqlash) to'sish */
     blockPrint: true,
     /** Sahifa ustida ko'rinmas suv belgisi */
