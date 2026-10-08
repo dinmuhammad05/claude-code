@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { AuthorPhoto } from "@/components/AuthorPhoto";
+import { ReadingPrefs } from "@/components/ReadingPrefs";
 
 /** Bosh sahifa va kurs rejasi uchun yuqori panel: loyiha nomi va muallif. */
 export function SiteHeader() {
@@ -17,6 +18,7 @@ export function SiteHeader() {
 
         {/* Muallif */}
         <div className="ml-auto flex items-center gap-2">
+          <ReadingPrefs />
           <span className="hidden text-xs text-[var(--skin-muted)] sm:inline">muallif</span>
           <a
             href={site.author.portfolio}

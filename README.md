@@ -18,8 +18,9 @@ Sayt: https://dinmuhammad.uz/claude-code/
 | 11 | Subagentlar va parallel ish | rejada |
 | 12 | Hooks va settings.json | rejada |
 | 13 | MCP: tashqi tizimlarni ulash | rejada |
-| 14 | Headless rejim, CI va GitHub | rejada |
-| 15 | Xavfsizlik, model tanlash va narx | rejada |
+| 14 | Plaginlar va marketplace’lar | rejada |
+| 15 | Headless rejim, CI va GitHub | rejada |
+| 16 | Xavfsizlik, model tanlash va narx | rejada |
 
 ## Tuzilma
 

@@ -8,5 +8,15 @@ import { CopyPre } from "@/components/lesson/CopyPre";
  * Kod bloklari (pre) "Nusxa" tugmasi bilan chiqadi.
  */
 export function useMDXComponents(components: MDXComponents): MDXComponents {
-  return { ...Lesson, pre: CopyPre, ...components };
+  return {
+    ...Lesson,
+    pre: CopyPre,
+    // Keng jadval sahifani emas, faqat o'zini gorizontal aylantiradi
+    table: (props) => (
+      <div className="table-wrap">
+        <table {...props} />
+      </div>
+    ),
+    ...components,
+  };
 }

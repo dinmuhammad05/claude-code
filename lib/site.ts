@@ -7,7 +7,7 @@ export const site = {
   shortName: "Claude Code",
   tagline: "Claude Code’ni professional darajada ishlatish — o‘zbek tilida",
   description:
-    "Bepul o‘zbekcha Claude Code kursi: agent qanday ishlaydi, ruxsatlar, kontekst, CLAUDE.md, tekshirish, Git, Skills, subagentlar, hooks, MCP, CI va xavfsizlik. Har bir dars rasmiy hujjatlarga tayanadi va amaliy mashq bilan.",
+    "Bepul o‘zbekcha Claude Code kursi: agent qanday ishlaydi, ruxsatlar, kontekst, CLAUDE.md, tekshirish, Git, Skills, subagentlar, hooks, MCP, plaginlar, CI va xavfsizlik. Har bir dars rasmiy hujjatlarga tayanadi va amaliy mashq bilan.",
   /** GitHub Pages manzili — OG rasm va sitemap uchun mutlaq havolalar shu yerdan olinadi */
   url: "https://dinmuhammad.uz/claude-code",
   author: {

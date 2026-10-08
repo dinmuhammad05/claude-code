@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 export const metadata: Metadata = {
   title: "Kurs rejasi: barcha darslar",
   description:
-    "Bepul o‘zbekcha Claude Code kursining to‘liq rejasi: agent siklidan tortib hooks, MCP, CI va xavfsizlikkacha — 15 ta amaliy dars.",
+    "Bepul o‘zbekcha Claude Code kursining to‘liq rejasi: agent siklidan tortib hooks, MCP, plaginlar, CI va xavfsizlikkacha — 16 ta amaliy dars.",
   alternates: { canonical: "/darslar/" },
 };
 

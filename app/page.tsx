@@ -41,7 +41,7 @@ export default function HomePage() {
           AI agent bilan ishlash — chat bilan gaplashish emas. Kurs agent qanday ishlashidan
           boshlab{" "}
           <strong className="text-[var(--skin-text)]">
-            kontekst, ruxsatlar, tekshirish, subagentlar, hooks, MCP va CI
+            kontekst, ruxsatlar, tekshirish, subagentlar, hooks, MCP, plaginlar va CI
           </strong>{" "}
           gacha olib boradi: natijasiga ishonsa bo‘ladigan, xavfsiz va tejamli ish usuli.
         </p>

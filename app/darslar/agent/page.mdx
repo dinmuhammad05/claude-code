@@ -16,8 +16,8 @@ bilan ishlash. Bu boshqa ko‘nikma. Ko‘pchilik dasturchilar uni chat kabi
 ishlatadi va natijadan hafsalasi pir bo‘ladi. Sababi — model yomonligida
 emas, ish **qanday tashkil qilinganida**.
 
-Bu dars kursning poydevori. Qolgan o‘n to‘rtta dars — ruxsatlar,
-kontekst, CLAUDE.md, subagentlar, hooks, MCP — hammasi shu darsdagi bitta
+Bu dars kursning poydevori. Qolgan o‘n beshta dars — ruxsatlar,
+kontekst, CLAUDE.md, subagentlar, hooks, MCP, plaginlar — hammasi shu darsdagi bitta
 aqliy modelga tayanadi: **agent sikli, uning ish stoli (kontekst oynasi)
 va “tayyor”ni isbotlaydigan tekshiruv**.
 
@@ -32,6 +32,14 @@ va “tayyor”ni isbotlaydigan tekshiruv**.
 | Agent ishini qanday tekshirtirish kerak? | Tekshiriladigan maqsad | 9 |
 | Xato yo‘ldan qanday qaytarish mumkin? | Esc, rewind, checkpoint | 10–11 |
 | Ertaga u bugungi ishni eslaydimi? | Sessiyalar va xotira | 12 |
+
+<Callout type="info" title="Vaqtingiz kam bo'lsa — 15 daqiqalik yo'l">
+Avval **16-bo‘limni** o‘qing — butun dars o‘nta gapda. Keyin **3-bo‘lim**
+(bitta sessiya kadrma-kadr) va **9-bo‘lim** (tekshiriladigan maqsad). Bu
+uchtasi — darsning yadrosi. Qolganini keyinroq, bo‘lak-bo‘lak o‘qisangiz
+ham bo‘ladi. Matn mayda yoki ko‘zga og‘ir bo‘lsa — yuqoridagi **A+** va
+mavzu tugmasidan foydalaning.
+</Callout>
 
 <Callout type="maslahat" title="Qanday o'qish kerak">
 Har yangi tushuncha avval **oddiy tilda**, keyin **mexanizm** sifatida,
@@ -439,7 +447,7 @@ standart holatda besh daqiqa.
 
 Amaliy xulosa: **sessiyani uzoq pauza bilan cho‘zish** va **kontekstni
 keraksiz narsa bilan to‘ldirish** — ikkalasi ham tokenni behuda sarflaydi.
-Narx va limitlar 15-darsda batafsil. Hozircha bitta raqam yo‘l-yo‘riq
+Narx va limitlar 16-darsda batafsil. Hozircha bitta raqam yo‘l-yo‘riq
 uchun: hujjatdagi korporativ statistika bo‘yicha o‘rtacha xarajat faol
 kunda taxminan **$13**, foydalanuvchilarning 90% uchun esa faol kunda $30
 dan kam.
@@ -501,7 +509,7 @@ Lekin oynani faqat fayllar to'ldirmaydi:
   sizning xabarlaringiz va javoblar      ~200-1 000`}</Calc>
 
 Yangi modellarda oyna kattaroq bo‘lishi mumkin — hujjat bir million
-tokenlik oynalarni ham sanab o‘tadi (model tanlash — 15-darsda).
+tokenlik oynalarni ham sanab o‘tadi (model tanlash — 16-darsda).
 Lekin keyingi bo‘limdagi muammo oyna o‘lchamidan qat’i nazar saqlanadi.
 
 ### 7.2 Joyingizni o‘zingiz ko‘ring: /context

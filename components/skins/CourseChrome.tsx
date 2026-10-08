@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { lessons } from "@/lib/lessons";
 import { ReadingProgress } from "@/components/lesson/Progress";
+import { ReadingPrefs } from "@/components/ReadingPrefs";
 
 /**
  * Kurs skini: agent bilan ishlaydigan terminal sessiyasi.
@@ -79,13 +80,16 @@ export function CourseChrome({ slug, children }: { slug: string; children: React
             ~/darslar/{slug}
           </span>
 
-          <div ref={menuRef} className="relative ml-auto">
+          <div className="ml-auto">
+            <ReadingPrefs />
+          </div>
+          <div ref={menuRef} className="relative">
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
               aria-haspopup="menu"
-              className="flex items-center gap-1.5 rounded border border-[var(--skin-border)] px-2.5 py-1 font-[family-name:var(--skin-mono)] text-xs hover:bg-[var(--skin-surface-2)]"
+              className="flex items-center gap-1.5 rounded border border-[var(--skin-border)] px-2.5 py-1 font-[family-name:var(--skin-mono)] text-xs whitespace-nowrap hover:bg-[var(--skin-surface-2)]"
             >
               dars {String(current?.order ?? 1).padStart(2, "0")}
               <span
@@ -165,27 +169,7 @@ export function CourseChrome({ slug, children }: { slug: string; children: React
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">{children}</main>
-
-          {/* Dekorativ kiritish maydoni va rejim satri */}
-          <div
-            aria-hidden
-            className="sticky bottom-0 bg-[var(--skin-bg)]/90 pt-2 pr-28 pb-2.5 pl-4 backdrop-blur sm:px-6"
-          >
-            <div className="mx-auto max-w-3xl font-[family-name:var(--skin-mono)] text-sm">
-              <div className="flex items-center gap-2 rounded-md border border-[var(--skin-border)] px-3 py-1.5">
-                <span className="text-[var(--skin-muted)]">&gt;</span>
-                <span className="inline-block h-4 w-2 animate-pulse bg-[var(--skin-text)]" />
-              </div>
-              <div className="mt-1 flex items-center gap-3 px-1 text-[11px] text-[var(--skin-muted)]">
-                <span>
-                  <span className="text-[var(--skin-accent)]">‖ plan mode</span>
-                  <span className="hidden sm:inline"> · shift+tab rejimni almashtiradi</span>
-                </span>
-                <span className="ml-auto hidden sm:inline">o‘qish rejimi</span>
-              </div>
-            </div>
-          </div>
+          <main className="mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">{children}</main>
         </div>
       </div>
     </div>

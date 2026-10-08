@@ -185,6 +185,18 @@ export const lessons: Lesson[] = [
   },
   {
     order: 14,
+    slug: "plaginlar",
+    title: "Plaginlar va marketplace’lar",
+    summary:
+      "Skills, subagentlar, hooks va MCP’ni bitta paketga yig‘ish: plagin tuzilishi, o‘rnatish va scope’lar, o‘z marketplace’ingiz, jamoaga tarqatish, plugin eval va xavfsizlik.",
+    accent: "#cf7a52",
+    status: "rejada",
+    level: "murakkab",
+    minutes: 60,
+    topics: ["Plugin", "plugin.json", "Marketplace", "--plugin-dir", "Plugin eval"],
+  },
+  {
+    order: 15,
     slug: "headless",
     title: "Headless rejim, CI va GitHub",
     summary:
@@ -196,7 +208,7 @@ export const lessons: Lesson[] = [
     topics: ["claude -p", "GitHub Actions", "Code review", "--bare", "Budjet chegarasi"],
   },
   {
-    order: 15,
+    order: 16,
     slug: "xavfsizlik-narx",
     title: "Xavfsizlik, model tanlash va narx",
     summary:

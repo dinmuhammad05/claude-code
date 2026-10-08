@@ -3,6 +3,7 @@ import "./globals.css";
 import { PwaManager } from "@/components/pwa/PwaManager";
 import { site } from "@/lib/site";
 import { ContentGuard, Watermark } from "@/components/lesson/ContentGuard";
+import { PREFS_SCRIPT } from "@/components/ReadingPrefs";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -79,7 +80,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uz">
+    <html lang="uz" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
+      </head>
       <body>
         {children}
         <Watermark />

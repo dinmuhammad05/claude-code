@@ -366,7 +366,7 @@ type SessionLine = {
  */
 export function Session({ title, lines }: { title?: string; lines: SessionLine[] }) {
   return (
-    <figure className="my-6 overflow-hidden rounded-[var(--skin-radius)] border border-[var(--skin-border)] bg-[#0f0f0e]">
+    <figure className="term my-6 overflow-hidden rounded-[var(--skin-radius)] border border-[var(--skin-border)] bg-[#0f0f0e]">
       {title ? (
         <figcaption className="flex items-center gap-2 border-b border-[var(--skin-border)] px-4 py-2 text-xs text-[var(--skin-muted)]">
           <span aria-hidden className="flex gap-1.5">

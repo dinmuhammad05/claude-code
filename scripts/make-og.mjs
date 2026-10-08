@@ -68,7 +68,7 @@ await shot(
     eyebrow: "Claude Code kursi",
     title: "Claude Code’ni<br/>professional darajada",
     subtitle:
-      "Agent sikli, kontekst, CLAUDE.md, tekshirish, subagentlar, hooks, MCP va CI — rasmiy hujjatlarga tayangan 15 dars",
+      "Agent sikli, kontekst, CLAUDE.md, tekshirish, subagentlar, hooks, MCP, plaginlar va CI — rasmiy hujjatlarga tayangan 16 dars",
     footer: { left: "bepul · o‘zbek tilida", right: "dinmuhammad.uz" },
   }),
 );

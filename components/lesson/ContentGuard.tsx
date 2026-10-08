@@ -71,7 +71,7 @@ export function Watermark() {
       style={{ contain: "strict" }}
     >
       <div
-        className="absolute -inset-1/4 flex flex-wrap content-start gap-x-16 gap-y-24 opacity-[0.035]"
+        className="absolute -inset-1/4 flex flex-wrap content-start gap-x-16 gap-y-24 opacity-[0.02]"
         style={{ transform: "rotate(-24deg)" }}
       >
         {Array.from({ length: 60 }).map((_, i) => (
