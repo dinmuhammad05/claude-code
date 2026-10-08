@@ -1,0 +1,128 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { JsonLd, homeJsonLd } from "@/lib/seo";
+import { lessons, readyLessons } from "@/lib/lessons";
+import { LessonCard } from "@/components/LessonCard";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+export default function HomePage() {
+  const ready = readyLessons();
+  const totalMinutes = ready.reduce((a, l) => a + l.minutes, 0);
+  const progress = Math.round((ready.length / lessons.length) * 100);
+
+  return (
+    <>
+      <JsonLd data={homeJsonLd()} />
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
+      <header className="max-w-3xl">
+        <div className="flex flex-wrap items-center gap-2 font-[family-name:var(--skin-mono)] text-sm">
+          <span className="text-[var(--skin-accent)]">{lessons.length} ta dars</span>
+          <span aria-hidden className="text-[var(--skin-muted)]">
+            ·
+          </span>
+          <span className="text-[var(--skin-muted)]">o‘zbek tilida</span>
+          <span aria-hidden className="text-[var(--skin-muted)]">
+            ·
+          </span>
+          <span className="text-[var(--skin-muted)]">bepul</span>
+        </div>
+
+        <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
+          <span className="text-[var(--skin-accent)]">Claude Code</span>’ni
+          <br />
+          professional darajada ishlatish
+        </h1>
+
+        <p className="mt-6 text-lg text-[var(--skin-muted)]">
+          AI agent bilan ishlash — chat bilan gaplashish emas. Kurs agent qanday ishlashidan
+          boshlab{" "}
+          <strong className="text-[var(--skin-text)]">
+            kontekst, ruxsatlar, tekshirish, subagentlar, hooks, MCP va CI
+          </strong>{" "}
+          gacha olib boradi: natijasiga ishonsa bo‘ladigan, xavfsiz va tejamli ish usuli.
+        </p>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href={`/darslar/${ready[0]?.slug ?? "agent"}/`}
+            className="rounded-[var(--skin-radius)] bg-[var(--skin-accent)] px-5 py-3 text-sm font-semibold text-[var(--skin-accent-text)]"
+          >
+            Birinchi darsdan boshlash
+          </Link>
+          <Link
+            href="/darslar/"
+            className="rounded-[var(--skin-radius)] border border-[var(--skin-border)] px-5 py-3 text-sm font-semibold hover:bg-[var(--skin-surface)]"
+          >
+            Kurs rejasi
+          </Link>
+        </div>
+      </header>
+
+      {/* Har bir darsda nima bor */}
+      <section className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          {
+            t: "Rasmiy hujjatlarga tayanadi",
+            d: "Har fakt Claude Code hujjatlaridan tekshirilgan; eskirgan maslahatlar alohida belgilangan.",
+          },
+          {
+            t: "Mexanizmdan boshlanadi",
+            d: "Avval agent qanday “o‘ylashi”, keyin buyruqlar: sikl, token, kontekst oynasi.",
+          },
+          {
+            t: "Real sessiyalar bilan",
+            d: "Har darsda qadamma-qadam sessiya: qaysi asbob, qaysi natija, qayerda to‘xtatish kerak.",
+          },
+          {
+            t: "Tekshiriladigan amaliyot",
+            d: "Yuklab olinadigan loyiha va tekshiruv skripti: “tayyor” — da’vo emas, natija.",
+          },
+        ].map((f) => (
+          <div
+            key={f.t}
+            className="rounded-[var(--skin-radius)] border border-[var(--skin-border)] bg-[var(--skin-surface)] p-4"
+          >
+            <div className="text-sm font-semibold">{f.t}</div>
+            <div className="mt-1.5 text-sm text-[var(--skin-muted)]">{f.d}</div>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-16">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--skin-muted)] uppercase">
+            Darslar
+          </h2>
+          <div className="font-[family-name:var(--skin-mono)] text-xs text-[var(--skin-muted)]">
+            {ready.length}/{lessons.length} tayyor · ~{Math.round(totalMinutes / 60)} soat
+            o‘qish
+          </div>
+        </div>
+
+        <div
+          className="mb-6 h-1 overflow-hidden rounded-full bg-[var(--skin-surface-2)]"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Kurs tayyorlik darajasi"
+        >
+          <div className="h-full bg-[var(--skin-accent)]" style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {lessons.map((l) => (
+            <LessonCard key={l.slug} lesson={l} />
+          ))}
+        </div>
+      </section>
+
+        <SiteFooter />
+      </div>
+    </>
+  );
+}

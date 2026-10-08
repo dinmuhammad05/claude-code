@@ -1,0 +1,1244 @@
+## Bu darsda nima o‘rganasiz
+
+Oddiy tilda: tasavvur qiling, jamoangizga juda qobiliyatli yangi
+dasturchi keldi. U tez o‘qiydi, ko‘p tilni biladi, terminalda erkin
+ishlaydi. Lekin uning ikkita o‘ziga xosligi bor. Birinchisi — u loyihangiz
+haqida **faqat o‘zi ochib o‘qigan narsani** biladi: kecha nima
+kelishganingiz, qaysi fayl muhimligi, “tayyor” nimani anglatishi — bularni
+u o‘zi topmaguncha yoki siz aytmaguncha bilmaydi. Ikkinchisi — u har
+kuni ertalab **kechagi suhbatni eslamay** keladi. Faqat stolida qoldirilgan
+yozuvlarni o‘qiydi.
+
+**Claude Code** — xuddi shunday hamkasb. U kodni o‘qiydi, buyruqlarni
+ishga tushiradi, fayllarni tahrirlaydi va natijaga qarab keyingi qadamni
+tanlaydi. Bu “chatbot bilan gaplashish” emas: bu **ish bajaradigan agent**
+bilan ishlash. Bu boshqa ko‘nikma. Ko‘pchilik dasturchilar uni chat kabi
+ishlatadi va natijadan hafsalasi pir bo‘ladi. Sababi — model yomonligida
+emas, ish **qanday tashkil qilinganida**.
+
+Bu dars kursning poydevori. Qolgan o‘n to‘rtta dars — ruxsatlar,
+kontekst, CLAUDE.md, subagentlar, hooks, MCP — hammasi shu darsdagi bitta
+aqliy modelga tayanadi: **agent sikli, uning ish stoli (kontekst oynasi)
+va “tayyor”ni isbotlaydigan tekshiruv**.
+
+| Savol | Javob shu darsda | Bo‘lim |
+| --- | --- | --- |
+| Chat bilan agentning farqi nimada? | Harakat qilish qobiliyati | 1 |
+| Claude Code vazifani qanday bajaradi? | Uch bosqichli sikl | 2–3 |
+| Model nima qiladi, Claude Code nima qiladi? | Model va “harness” | 4 |
+| Agent qaysi asboblar bilan ishlaydi? | Asboblar toifalari | 5 |
+| Token nima va nega u muhim? | Token iqtisodi | 6 |
+| Nega uzun sessiyada agent “aqlsizlanadi”? | Kontekst oynasi | 7–8 |
+| Agent ishini qanday tekshirtirish kerak? | Tekshiriladigan maqsad | 9 |
+| Xato yo‘ldan qanday qaytarish mumkin? | Esc, rewind, checkpoint | 10–11 |
+| Ertaga u bugungi ishni eslaydimi? | Sessiyalar va xotira | 12 |
+
+<Callout type="maslahat" title="Qanday o'qish kerak">
+Har yangi tushuncha avval **oddiy tilda**, keyin **mexanizm** sifatida,
+oxirida **amaliy qoida** bilan beriladi. `Chuqurroq` bloklarini birinchi
+o‘qishda tashlab ketsangiz ham bo‘ladi. Bo‘lim oxiridagi **nazorat
+savollariga** avval o‘zingiz javob bering. Darsdagi faktlar Claude Code’ning
+rasmiy hujjatlariga tayanadi (20-bo‘lim). Claude Code tez o‘zgaradi:
+interfeys yozuvlari va menyular siz ko‘rgandan biroz farq qilishi mumkin,
+lekin sikl, kontekst va tekshiruv g‘oyalari o‘zgarmaydi.
+</Callout>
+
+<Callout type="info" title="Kimlar uchun">
+Kurs kamida bir yil dasturlash tajribasi bor, git va terminal bilan
+ishlay oladigan dasturchilar uchun. Claude Code’ni hali o‘rnatmagan
+bo‘lsangiz, bu darsni baribir o‘qing — o‘rnatish 2-darsda. Amaliyot
+qismida (17-bo‘lim) esa Claude Code kerak bo‘ladi.
+</Callout>
+
+## 1. Chat va agent: farqi bitta so‘zda — harakat
+
+Oddiy tilda: chat-yordamchi — telefon orqali maslahat beradigan usta.
+Siz muammoni tasvirlaysiz, u “mana bu murvatni burab ko‘ring” deydi. Burash,
+natijani ko‘rish va qayta qo‘ng‘iroq qilish — sizning ishingiz. Agent esa
+uyingizga kelgan usta: o‘zi qaraydi, o‘zi buraydi, o‘zi suv ochib tekshiradi.
+
+Chat oynasida AI bilan ishlash odatda shunday kechadi:
+
+1. Siz xato matnini va kodning bir qismini nusxalab joylaysiz.
+2. Model javob yozadi: “mana bu qatorni o‘zgartiring”.
+3. Siz kodni editorga ko‘chirasiz, testni ishga tushirasiz.
+4. Xato boshqa joyda chiqadi. Yana nusxalaysiz. Model esa sizning
+   loyihangizning qolgan qismini **hech qachon ko‘rmagan**.
+
+Bu jarayonda **sikl sizning qo‘lingizda**: kontekstni siz yig‘asiz,
+harakatni siz qilasiz, natijani siz tekshirasiz. Model faqat “o‘ylash”
+qismini bajaradi.
+
+Agentda sikl **modelning o‘zida**. Rasmiy hujjat buni bitta jumlada
+aytadi: asboblarsiz Claude faqat matn bilan javob bera oladi, asboblar
+bilan esa **harakat qila oladi**. Claude Code’ga “testlar yiqilyapti,
+tuzat” desangiz, u o‘zi testni ishga tushiradi, xato chiqqan faylni o‘zi
+ochadi, tuzatadi va testni **yana** ishga tushiradi.
+
+<Versus
+  left={{
+    title: "Chat-yordamchi",
+    points: [
+      "Kontekstni siz nusxalab berasiz",
+      "Javob — matn: 'mana bunday qiling'",
+      "Kodni siz ko'chirasiz va ishga tushirasiz",
+      "Model natijani ko'rmaydi, siz aytib berasiz",
+      "Har qadamda siz kerak bo'lasiz",
+    ],
+  }}
+  right={{
+    title: "Agent (Claude Code)",
+    points: [
+      "Kerakli fayllarni o'zi topadi va o'qiydi",
+      "Javob — harakat: tahrir, buyruq, qidiruv",
+      "Testni o'zi ishga tushiradi",
+      "Natijani o'zi ko'radi va keyingi qadamni tanlaydi",
+      "Siz yo'nalish berasiz va natijani qabul qilasiz",
+    ],
+  }}
+/>
+
+Bu farqning **ikki tomoni** bor va kurs ikkalasi haqida.
+
+**Kuch.** Agent o‘nlab qadamni sizsiz bajaradi. Yaxshi qo‘yilgan vazifada
+siz bir necha daqiqa qaraysiz, keyin boshqa ish bilan shug‘ullanasiz.
+
+**Xavf.** Agent **haqiqiy** buyruqlarni **haqiqiy** kompyuterda bajaradi.
+Fayl o‘chirishi, paket o‘rnatishi, `git push` qilishi mumkin. Chatdagi
+noto‘g‘ri javob — shunchaki noto‘g‘ri matn. Agentning noto‘g‘ri harakati
+esa diskda, git tarixida yoki serverda iz qoldiradi. Shuning uchun Claude
+Code’da **ruxsatlar tizimi** bor (2–3-bo‘limlar va 3-dars).
+
+<Check q="Chat-yordamchida 'sikl sizning qo'lingizda' degani nima?">
+Kontekstni yig‘ish (fayllarni nusxalash), harakat (kodni o‘zgartirish,
+buyruq ishga tushirish) va natijani tekshirish — uchalasini ham siz
+qilasiz. Model faqat matn yozadi. Agentda bu uch qadamni model asboblar
+orqali o‘zi bajaradi, siz esa yo‘naltirasiz va natijani qabul qilasiz.
+</Check>
+
+## 2. Agent sikli: uch bosqich
+
+Oddiy tilda: tajribali usta ham shunday ishlaydi — avval **qaraydi**
+(nima buzilgan?), keyin **qiladi** (murvatni almashtiradi), keyin
+**tekshiradi** (suv oqyaptimi?). Oqsa — yana qaraydi. Bu aylana muammo
+yo‘qolguncha davom etadi.
+
+Rasmiy hujjat Claude Code ishini aynan uch bosqichga bo‘ladi:
+
+1. **Kontekst yig‘ish** — fayllarni o‘qish, kod bo‘ylab qidirish, loyiha
+   tuzilishini tushunish, kerak bo‘lsa buyruq bilan holatni bilish
+   (`git status`, test natijasi).
+2. **Harakat qilish** — faylni tahrirlash, yangi fayl yaratish, buyruq
+   ishga tushirish.
+3. **Natijani tekshirish** — testlar, build, linter, skrinshot: o‘zgarish
+   haqiqatan maqsadga olib keldimi?
+
+<Flow nodes={["Vazifa", "Kontekst yig'ish", "Harakat", "Tekshirish", "Maqsadga yetdimi?", "Yo'q — yana kontekst", "Ha — natija"]} caption="Agent sikli. Hujjat ta'kidlaydi: bosqichlar bir-biriga aralashib ketadi va bir vazifada ko'p marta aylanadi." />
+
+Hujjatdagi muhim kuzatuv: **bosqichlar bir-biriga aralashadi**. Kod
+bazasi haqidagi savolga javob berish uchun faqat birinchi bosqich yetarli
+bo‘lishi mumkin. Xatoni tuzatish esa uchala bosqichdan **qayta-qayta**
+o‘tadi: o‘qidi → tuzatdi → test yiqildi → yana o‘qidi → yana tuzatdi.
+
+### 2.1 Har aylanish — bitta “o‘ylash + asbob” juftligi
+
+Ichkarida sikl juda oddiy. Model har safar bitta narsani hal qiladi:
+**hozir qaysi asbobni qanday argument bilan chaqiraman** yoki **ish
+tugadi, javob yozaman**. Claude Code asbobni bajaradi, natijani
+(fayl matni, buyruq chiqishi, xato) modelga qaytaradi. Model shu yangi
+ma’lumot bilan yana qaror qiladi.
+
+<Flow nodes={["Model: 'Read kassa.py'", "Claude Code faylni o'qiydi", "Fayl matni kontekstga qo'shiladi", "Model: 'Bash python -m unittest'", "Test chiqishi kontekstga qo'shiladi", "Model: 'Edit kassa.py ...'"]} caption="Har qadamda natija kontekstga qo'shiladi. Keyingi qaror shu to'plangan kontekst asosida." />
+
+Shu sxemadan uchta muhim xulosa chiqadi. Kursning qolgan qismi
+asosan shu uchtasining oqibati:
+
+1. **Model faqat kontekstdagi narsani biladi.** U o‘qimagan faylni
+   bilmaydi. U ishga tushirmagan testning natijasini bilmaydi. U sizning
+   boshingizdagi talabni — siz yozmaguningizcha — bilmaydi.
+2. **Har qadam kontekstni to‘ldiradi.** Har o‘qilgan fayl, har buyruq
+   chiqishi oynada joy egallaydi. Joy cheklangan (7-bo‘lim).
+3. **Sikl tekshiruv signali bilan to‘xtaydi.** Agar “tayyor”ni
+   tekshiradigan narsa bo‘lmasa, model “menimcha tayyor” degan taxmin
+   bilan to‘xtaydi (9-bo‘lim).
+
+### 2.2 Siz sikl ichidasiz
+
+Sikl avtomatik aylanadi, lekin siz uning **ichidasiz**. Hujjat aytadi:
+istalgan payt to‘xtatib, Claude’ni boshqa yo‘nalishga burishingiz,
+qo‘shimcha kontekst berishingiz yoki boshqa yondashuvni so‘rashingiz
+mumkin. Buning amaliy tafsilotlari 10-bo‘limda: `Esc`, navbatga yozish
+va rewind.
+
+<Check q="Nega xatoni tuzatish vazifasi uch bosqichdan bir necha marta o'tadi, savolga javob esa ko'pincha bitta bosqichda tugaydi?">
+Savolga javob — faqat bilim: fayllarni o‘qish va tushuntirish yetarli,
+hech narsa o‘zgarmaydi, tekshiradigan natija yo‘q. Xatoni tuzatishda esa
+har harakatdan keyin natijani ko‘rish kerak: test hali ham yiqilsa,
+yangi ma’lumot (yangi xato matni) paydo bo‘ladi va u yangi kontekst
+yig‘ishga, keyin yangi harakatga olib keladi.
+</Check>
+
+## 3. Bitta sessiya — kadrma-kadr
+
+Oddiy tilda: futbolni tushunish uchun qoidalarni o‘qish yetmaydi —
+bitta o‘yinni sekinlashtirib ko‘rish kerak. Keling, bitta haqiqiy vazifani
+qadamma-qadam ko‘ramiz.
+
+Loyiha — amaliyotdagi kichik **kassa** dasturi (17-bo‘lim): chekdagi
+mahsulotlar summasini, promokod chegirmasini va QQSni hisoblaydi. Unda
+xatolar bor. Qoidalar `README.md` da yozilgan, `tekshir.py` esa kod
+qoidalarni bajarishini tekshiradi.
+
+Vazifa shunday berilgan:
+
+```text
+kassa.py README dagi "Qoidalar" ga mos emas. Uni tuzat.
+Tayyor degani: python tekshir.py oxirida "Jami: 8/8 OK".
+test_kassa.py va tekshir.py ni o'zgartirma.
+```
+
+Quyidagi sessiya — soddalashtirilgan va o‘zbekchalashtirilgan ko‘rinish.
+Haqiqiy interfeysda yozuvlar inglizcha va biroz boshqacha, lekin qadamlar
+ketma-ketligi aynan shunday.
+
+<Session
+  title="~/kassa — claude"
+  lines={[
+    { k: "user", t: "kassa.py README dagi \"Qoidalar\" ga mos emas. Uni tuzat. Tayyor degani: python tekshir.py oxirida \"Jami: 8/8 OK\". test_kassa.py va tekshir.py ni o'zgartirma." },
+    { k: "note", t: "1-bosqich: kontekst yig'ish. Avval qoidalar, keyin kod." },
+    { k: "tool", t: "Read(README.md)" },
+    { k: "out", t: "Read 96 lines" },
+    { k: "tool", t: "Read(kassa.py)" },
+    { k: "out", t: "Read 34 lines" },
+    { k: "tool", t: "Bash(python tekshir.py)" },
+    { k: "out", t: "[OK] Testlar o'zgartirilmagan\n[XATO] Ko'rinadigan testlar o'tadi\n[XATO] Chegirma yaxlitlash (0.5 — yuqoriga)\n...\nJami: 2/8 OK" },
+    { k: "say", t: "Beshta muammo bor: chegirmaga 50 000 chegarasi qo'yilmagan, QQS jamiga emas 100 ga bo'linyapti, round() 0.5 ni juftga yaxlitlaydi, noma'lum promokod va noto'g'ri mahsulot tekshirilmaydi." },
+    { k: "note", t: "2-bosqich: harakat. Manual rejimda har tahrir ruxsat so'raydi." },
+    { k: "tool", t: "Edit(kassa.py)" },
+    { k: "ask", t: "kassa.py faylini tahrirlashga ruxsat berasizmi?\n  1. Ha\n  2. Ha, shu sessiyada barcha tahrirlarga\n  3. Yo'q, boshqacha qil (izoh yozing)" },
+    { k: "out", t: "Updated kassa.py with 17 additions and 19 removals" },
+    { k: "note", t: "3-bosqich: tekshirish." },
+    { k: "tool", t: "Bash(python tekshir.py)" },
+    { k: "out", t: "...\n[XATO] QQS yaxlitlash (0.5 — yuqoriga)\n       jami 42: qqs 4, kutilgan 5\n...\n[XATO] 300 ta tasodifiy chek: qoidalar bajariladi\n       13-chek: ... 'qqs': 102820 ..., kutilgan ... 'qqs': 102821\nJami: 6/8 OK" },
+    { k: "note", t: "Natija yangi ma'lumot berdi — sikl yana aylanadi." },
+    { k: "say", t: "QQSda bo'luvchini tuzatdim, lekin round() qolib ketgan: u 4.5 ni 4 ga (juft songa) yaxlitlaydi. Chegirmadagi kabi 'yarim — yuqoriga' funksiyasini ishlataman." },
+    { k: "tool", t: "Edit(kassa.py)" },
+    { k: "out", t: "Updated kassa.py with 1 addition and 1 removal" },
+    { k: "tool", t: "Bash(python tekshir.py)" },
+    { k: "out", t: "Jami: 8/8 OK" },
+    { k: "tool", t: "Bash(git diff --stat)" },
+    { k: "out", t: " kassa.py | 36 +++++++++++++++++-------------------\n 1 file changed, 17 insertions(+), 19 deletions(-)" },
+    { k: "say", t: "Tayyor: tekshir.py 8/8. Faqat kassa.py o'zgardi; testlar va tekshir.py tegilmagan (git diff --stat)." },
+  ]}
+/>
+
+Bu sessiyada nimalarga e’tibor berish kerak:
+
+- **Birinchi harakat — o‘qish, tahrir emas.** Agent avval qoidalarni,
+  keyin kodni o‘qidi va **tekshiruvni ishga tushirib**, muammolar
+  ro‘yxatini oldi. Vazifada `README` va `tekshir.py` tilga olingani buni
+  osonlashtirdi.
+- **Tekshiruv yangi ma’lumot berdi.** Birinchi tuzatishdan keyin 6/8.
+  “Tayyor” degan taxmin bilan to‘xtash o‘rniga, agent xato matniga qarab
+  sababni topdi. Aynan shu joyda sikl **tekshiruvsiz** sessiyadan farq
+  qiladi.
+- **Oxirgi javob — dalil bilan.** “Tayyor” degani bilan birga, nimani
+  ishga tushirgani va natijasi (8/8, `git diff --stat`) ko‘rsatilgan.
+  Hujjatdagi tavsiya: Claude’dan muvaffaqiyatni **da’vo qilishni emas,
+  dalil ko‘rsatishni** talab qiling.
+- **Ruxsat so‘rovi — siklning bir qismi.** Manual (standart) rejimda Claude
+  fayl tahriri va shell buyrug‘idan oldin so‘raydi. “Ha, shu sessiyada
+  hammasiga” varianti keyingi so‘rovlarni kamaytiradi. Rejimlar va
+  qoidalar 3-darsda.
+
+<Callout type="ogoh" title="Bu ideal sessiya">
+Haqiqiy sessiyalar har doim bunchalik tekis bo‘lmaydi: agent ba’zan
+noto‘g‘ri faylni o‘qiydi, keraksiz narsani o‘zgartiradi yoki birinchi 6/8
+da to‘xtab qoladi. Amaliyotda xuddi shu loyihada **noaniq** vazifa bilan
+sessiya o‘tkazasiz va farqni o‘zingiz ko‘rasiz. Model ehtimollikka
+tayanadi: bir xil vazifa ikki marta bir xil yo‘ldan bormasligi mumkin.
+</Callout>
+
+<Check q="Sessiyada agent birinchi tahrirdan oldin tekshir.py ni ishga tushirdi. Bu nima uchun foydali?">
+Ikki sabab. Birinchidan, u **boshlang‘ich holatni** o‘lchadi (2/8) —
+keyingi natijani shu bilan solishtirsa bo‘ladi. Ikkinchidan, tekshiruv
+chiqishi muammolar ro‘yxatini berdi: qaysi qoidalar buzilganini taxmin
+qilish o‘rniga aniq bildi. Bu kontekst yig‘ishning eng arzon va eng aniq
+usuli.
+</Check>
+
+## 4. Model va harness: kim nima qiladi
+
+Oddiy tilda: Claude Code ikki qismdan iborat. Birinchisi — **miya**: til
+modeli, u o‘ylaydi va qaror qiladi. Ikkinchisi — **tana**: qo‘llar
+(asboblar), ko‘zlar (fayl o‘qish, buyruq chiqishi) va xotira daftari
+(kontekst). Miya kuchli, lekin tanasiz u hech narsa qila olmaydi. Tana esa
+miyasiz qaror qabul qilmaydi.
+
+Rasmiy hujjat buni shunday ta’riflaydi: agent sikli ikki komponentga
+tayanadi — **o‘ylaydigan modellar** va **harakat qiladigan asboblar**.
+Claude Code — model atrofidagi qatlam: u asboblarni beradi va model
+ko‘radigan kontekstni boshqaradi. Bu atrofdagi qatlam **agentic harness**
+deb ataladi. “Harness” so‘zma-so‘z “jabduq” — otning kuchini aravaga
+uzatadigan anjom.
+
+| Qism | Nima qiladi | Misol |
+| --- | --- | --- |
+| Model (Claude) | Vazifani tushunadi, kodni o‘qib mulohaza qiladi, keyingi qadamni tanlaydi, kod yozadi | “Avval testni ishga tushiraman, keyin xato chiqqan funksiyani o‘qiyman” |
+| Asboblar | Modelning qarorini haqiqiy harakatga aylantiradi | `Read`, `Edit`, `Bash`, `WebFetch` |
+| Kontekst boshqaruvi | Model nimani ko‘rishini belgilaydi; oyna to‘lganda eski chiqishlarni tozalaydi, kerak bo‘lsa suhbatni qisqartiradi | Avtomatik compact, `/context` |
+| Ruxsatlar | Qaysi harakat so‘rovsiz, qaysi biri so‘rov bilan, qaysi biri umuman taqiqlangan | Manual rejim, allow/deny qoidalari |
+| Bajarilish muhiti | Kod qayerda ishlaydi: sizning kompyuteringizda yoki bulutda | Lokal terminal, claude.ai/code |
+
+Bu ajratish amalda **juda muhim**, chunki ikki xil narsa ikki xil
+yo‘l bilan boshqariladi:
+
+- **Model xulqi** — so‘z bilan boshqariladi: vazifa matni, CLAUDE.md,
+  misollar. Bu **tavsiya**: model odatda amal qiladi, lekin kafolat yo‘q.
+- **Harness xulqi** — sozlama bilan boshqariladi: ruxsat qoidalari,
+  rejimlar, sandbox, hooks. Bu **majburiy**: model nima “xohlashidan”
+  qat’i nazar ishlaydi.
+
+Hujjatdagi qoida buni aniq aytadi: ruxsat qoidalarini **Claude Code
+ijro etadi, model emas**. Prompt yoki CLAUDE.md dagi ko‘rsatmalar Claude
+nima qilishga **urinishini** shakllantiradi, lekin Claude Code nimaga
+**ruxsat berishini** o‘zgartirmaydi.
+
+<Callout type="xato" title="Eng ko'p uchraydigan xato">
+“CLAUDE.md ga ‘hech qachon .env faylini o‘qima’ deb yozdim — endi xavfsiz”.
+Yo‘q. Bu — modelga iltimos. Ko‘pincha bajariladi, lekin bu **xavfsizlik
+chegarasi emas**. Haqiqiy taqiq — ruxsat qoidasi (masalan, `.env` uchun
+`Read` ni deny qilish) yoki hook. Bu 3, 5 va 12-darslarda batafsil.
+</Callout>
+
+<Check q="Jamoa 'testlarni hech qachon o'chirma' degan qoidani kafolatlamoqchi. Uni qayerga yozish kerak — CLAUDE.md gami yoki boshqa joyga?">
+CLAUDE.md ga yozish foydali — model odatda amal qiladi. Lekin
+**kafolat** kerak bo‘lsa, bu harness darajasida bo‘lishi kerak: masalan,
+test fayllarini tahrirlashga deny qoidasi yoki o‘zgarishni bloklaydigan
+hook. So‘z — tavsiya, sozlama — majburiyat.
+</Check>
+
+## 5. Asboblar: agentning qo‘llari
+
+Oddiy tilda: ustaning asboblar qutisi bor — o‘lchov lentasi, otvertka,
+dril. Usta qanchalik mohir bo‘lmasin, qutida bo‘lmagan asbob bilan
+ishlay olmaydi. Claude Code’ning asboblar qutisi ham aniq ro‘yxat.
+
+Hujjat o‘rnatilgan asboblarni beshta toifaga ajratadi: fayl amallari,
+qidiruv, bajarish, veb va kod tahlili (oxirgisi qo‘shimcha plagin talab
+qiladi). Alohida — orkestratsiya: subagent ishga tushirish, sizga savol
+berish, vazifalar ro‘yxati.
+
+| Toifa | Asboblar | Nima qiladi | Ruxsat so‘raydimi |
+| --- | --- | --- | --- |
+| Fayl o‘qish | `Read` | Fayl matnini o‘qiydi | Yo‘q (ish papkasidan tashqari — ha) |
+| Fayl yozish | `Edit`, `Write` | Aniq joyni almashtiradi / yangi fayl yozadi | Ha |
+| Qidiruv | `Glob`, `Grep` yoki Bash’dagi `find`, `grep` | Fayl nomi va matn bo‘yicha qidiradi | Yo‘q |
+| Bajarish | `Bash` (Windows’da `PowerShell` ham) | Shell buyrug‘ini ishga tushiradi | Ha (faqat o‘qish uchun buyruqlar — yo‘q) |
+| Veb | `WebFetch`, `WebSearch` | Sahifa yuklaydi, qidiradi | Ha |
+| Orkestratsiya | `Agent`, `AskUserQuestion`, `TaskCreate`… | Subagent, savol, vazifalar ro‘yxati | Yo‘q |
+
+“Ruxsat so‘raydimi” ustuni — Manual (standart) rejim uchun. Boshqa
+rejimlarda bu o‘zgaradi (3-dars).
+
+### 5.1 Ikki nozik tafsilot
+
+**Edit — “aniq satrni almashtirish”.** `Edit` faylni qaytadan yozmaydi:
+u faylda aniq bir matn bo‘lagini topib, boshqasiga almashtiradi. Shuning
+uchun avval faylni o‘qishi shart. Bu yaxshi xususiyat: o‘zgarish kichik,
+diff aniq, tasodifan faylning boshqa qismi buzilmaydi.
+
+**Qidiruv OS ga bog‘liq.** Hujjatga ko‘ra, macOS, Linux va WSL da `Glob`
+va `Grep` asboblari standart to‘plamda **yo‘q**. U yerda Claude
+`find` va `grep` buyruqlarini Bash orqali ishlatadi. Bu buyruqlar Claude
+Code ichida tezkor o‘rnatilgan versiyalar bilan ishlaydi. Windows’da esa
+`Glob` va `Grep` standart to‘plamda bor. Sessiya jurnalida
+`Bash(grep -rn ...)` ko‘rsangiz — bu xato emas, shunday bo‘lishi kerak.
+
+### 5.2 Bash — eng kuchli va eng xavfli asbob
+
+`Bash` bilan agent **siz terminalda qila oladigan hamma narsani** qila
+oladi: test ishga tushirish, paket o‘rnatish, git, docker, ma’lumotlar
+bazasiga ulanish. Hujjatdagi ikki fakt amalda muhim:
+
+- Har bir buyruq **alohida jarayonda** ishlaydi. Bitta buyruqda
+  `export` qilingan o‘zgaruvchi keyingisida yo‘q.
+- `ls`, `cat`, `grep`, faqat o‘qiydigan `git` kabi o‘rnatilgan buyruqlar
+  ruxsat so‘ramasdan ishlaydi. Qolganlari Manual rejimda so‘raladi.
+
+Shuning uchun ruxsat so‘rovlarini **o‘qish** kerak — ayniqsa Bash
+buyruqlarini. `rm -rf`, `git push --force`, `curl ... | sh`, ma’lumotlar
+bazasiga yozish — bular “Ha” bosishdan oldin to‘xtab o‘ylaydigan
+buyruqlar.
+
+<Deep title="Asbob nomlari nega muhim">
+Asbob nomlari — shunchaki yorliq emas. Ular ruxsat qoidalarida
+(`Bash(npm run test *)`, `Read(./.env)`), subagentlarning asboblar
+ro‘yxatida va hook matcher’larida **aynan shu yozilishda** ishlatiladi.
+Masalan, deny ro‘yxatiga faqat `Bash` deb yozsangiz, bu asbob Claude
+kontekstidan butunlay olib tashlanadi. Bularning hammasi 3, 11 va
+12-darslarda. Hozircha bitta qoida: sessiya jurnalida ko‘rgan asbob nomi —
+keyinchalik sozlamalarda yoziladigan nom.
+</Deep>
+
+<Check q="macOS'da sessiya jurnalida Grep asbobi o'rniga Bash(grep -rn 'round(' .) ko'rdingiz. Bu nimani bildiradi?">
+Hech qanday muammo yo‘q. Hujjatga ko‘ra macOS, Linux va WSL da `Glob`
+va `Grep` asboblari standart to‘plamda yo‘q, qidiruv Bash orqali `find`
+va `grep` bilan bajariladi. Bu buyruqlar faqat o‘qiydi, shuning uchun
+ruxsat so‘ramaydi.
+</Check>
+
+## 6. Token: agent nimani o‘qiydi va nimaga to‘laysiz
+
+Oddiy tilda: model matnni harflab emas, **bo‘laklab** o‘qiydi. Bu
+bo‘laklar **token** deyiladi. Token — so‘z, so‘zning bir qismi, tinish
+belgisi yoki bo‘sh joylar guruhi bo‘lishi mumkin. Model nimani o‘qisa ham,
+nimani yozsa ham — hammasi tokenlarda o‘lchanadi.
+
+Token ikki sababga ko‘ra muhim:
+
+1. **Joy.** Kontekst oynasi tokenlarda o‘lchanadi (7-bo‘lim). Har
+   o‘qilgan fayl, har buyruq chiqishi joy egallaydi.
+2. **Narx va limit.** Hujjatga ko‘ra Claude Code xarajati **token
+   iste’moliga** bog‘liq. Obunada esa tokenlar foydalanish limitingizdan
+   ketadi. Kontekst qancha katta bo‘lsa, har qadamda shuncha ko‘p token
+   qayta ishlanadi.
+
+### 6.1 Fayl necha token bo‘ladi
+
+Aniq raqam tokenizatorga, tilga va kod uslubiga bog‘liq. Ingliz tilidagi
+matn va kod uchun keng tarqalgan taxminiy qoida: **bir token — o‘rtacha
+3–4 belgi**. Bu qo‘pol baho, lekin tartibni tushunish uchun yetarli.
+
+<Calc title="Bitta faylning narxi (taxminiy)" result="O'rtacha modul — bir necha ming token. Hujjatdagi misolda bitta fayl o'qish 2 400 token: tartib bir xil">{`Faraz: Python moduli, 300 qator
+  O'rtacha qator uzunligi          ~35 belgi
+  Jami belgilar                    300 x 35 = 10 500
+  Token (bir token ~3.5 belgi)     10 500 / 3.5 = ~3 000
+
+Taqqoslash: rasmiy hujjatdagi illyustratsiya
+  "Read src/api/auth.ts"           2 400 token
+
+Xulosa: o'rtacha faylni o'qish ~2-4 ming token.
+  50 ta shunday faylni o'qish      ~100-150 ming token`}</Calc>
+
+O‘zbekcha matn haqida bitta eslatma: ko‘p tokenizatorlar asosan
+inglizcha matnda o‘qitilgan, shuning uchun boshqa tillardagi matn odatda
+ko‘proq tokenga bo‘linadi. Bu so‘rovlaringizni o‘zbekcha yozmang degani
+emas — Claude o‘zbekchani tushunadi va o‘zbekcha javob beradi. Faqat juda
+uzun o‘zbekcha hujjatlarni kontekstga yuklashda buni hisobga oling va
+haqiqiy raqamni `/context` bilan o‘zingiz ko‘ring.
+
+### 6.2 Kesh: bir xil narsaga ikki marta to‘lamaslik
+
+Agent har qadamda model kontekstni boshidan “ko‘radi”. Bu qimmat bo‘lishi
+kerak edi, lekin Claude Code **prompt caching** dan avtomatik
+foydalanadi: oldingi qadamda yuborilgan bir xil boshlang‘ich qism (tizim
+ko‘rsatmalari, avval o‘qilgan fayllar) keshdan arzonroq olinadi. Hujjatga
+ko‘ra kesh umri obunada bir soat, API kalit yoki bulut provayderida esa
+standart holatda besh daqiqa.
+
+Amaliy xulosa: **sessiyani uzoq pauza bilan cho‘zish** va **kontekstni
+keraksiz narsa bilan to‘ldirish** — ikkalasi ham tokenni behuda sarflaydi.
+Narx va limitlar 15-darsda batafsil. Hozircha bitta raqam yo‘l-yo‘riq
+uchun: hujjatdagi korporativ statistika bo‘yicha o‘rtacha xarajat faol
+kunda taxminan **$13**, foydalanuvchilarning 90% uchun esa faol kunda $30
+dan kam.
+
+<Check q="Nega bitta katta log faylini (masalan, 20 MB) agentga butunlay o'qitish yomon fikr?">
+20 MB matn millionlab tokenga teng — u kontekst oynasiga umuman
+sig‘masligi yoki bir zumda to‘ldirib yuborishi mumkin. To‘g‘ri yo‘l —
+agentga kerakli qismni topishni topshirish: `grep` bilan xato satrlarini
+qidirish, `tail` bilan oxirini olish. Shunda kontekstga faqat kerakli
+bir necha yuz satr tushadi.
+</Check>
+
+## 7. Kontekst oynasi: agentning ish stoli
+
+Oddiy tilda: kontekst oynasi — ustaning **ish stoli**. Stol katta, lekin
+cheksiz emas. Usta ochgan har bir chizma, har bir o‘lchov yozuvi stolda
+qoladi. Stol to‘lganda yo eskilarini olib tashlash kerak, yo hammasini
+bitta qisqa xulosaga yig‘ish kerak. Stolda yo‘q narsa esa — usta uchun
+umuman yo‘q.
+
+Hujjatga ko‘ra kontekst oynasida quyidagilar turadi: **suhbat tarixi,
+fayllar matni, buyruqlar chiqishi, CLAUDE.md, avtomatik xotira, yuklangan
+skill’lar va tizim ko‘rsatmalari**.
+
+### 7.1 Sessiya boshida stol bo‘sh emas
+
+Siz birinchi so‘zni yozmasdanoq oynada nimadir bor. Rasmiy hujjat buni
+illyustratsiya bilan ko‘rsatadi (raqamlar loyihaga qarab o‘zgaradi):
+
+| Sessiya boshida yuklanadi | Illyustrativ hajm, token |
+| --- | --- |
+| Tizim ko‘rsatmalari | 4 200 |
+| Avtomatik xotira (MEMORY.md) | 680 |
+| Muhit ma’lumoti | 280 |
+| MCP asboblari (nomlari, sxemalar kechiktirilgan) | 120 |
+| Skill tavsiflari | 450 |
+| Shaxsiy `~/.claude/CLAUDE.md` | 320 |
+| Loyiha CLAUDE.md | 1 800 |
+| **Jami** | **7 850** |
+
+Bu jadvaldan ikki xulosa:
+
+- **CLAUDE.md har sessiyada joy egallaydi.** Loyiha CLAUDE.md si 1 800
+  token bo‘lsa — har sessiyada 1 800 token. Uni 20 000 tokenlik
+  qo‘llanmaga aylantirish xato (5-dars).
+- **Ish davomida eng ko‘p joyni fayllar egallaydi.** Hujjatning o‘zi
+  aytadi: kontekst iste’molida fayl o‘qishlar ustunlik qiladi.
+
+<Calc title="Sessiya byudjeti (illyustratsiya)" result="200K oynada taxminan 70-80 ta o'rtacha fayl o'qishga joy bor. Buyruq chiqishlari, suhbat va tahrirlarni hisobga olsak — undan ancha kam">{`Illyustrativ oyna (hujjatdagi simulyatsiya)   200 000 token
+Sessiya boshidagi yuklama                       -7 850
+Ish uchun qolgan joy                           192 150
+
+Bitta fayl o'qish (hujjat misoli)               2 400
+192 150 / 2 400                                 = ~80 ta fayl
+
+Lekin oynani faqat fayllar to'ldirmaydi:
+  test chiqishi (har ishga tushirishda)  ~500-3 000
+  har tahrir va uning natijasi           ~300-1 500
+  sizning xabarlaringiz va javoblar      ~200-1 000`}</Calc>
+
+Yangi modellarda oyna kattaroq bo‘lishi mumkin — hujjat bir million
+tokenlik oynalarni ham sanab o‘tadi (model tanlash — 15-darsda).
+Lekin keyingi bo‘limdagi muammo oyna o‘lchamidan qat’i nazar saqlanadi.
+
+### 7.2 Joyingizni o‘zingiz ko‘ring: /context
+
+`/context` buyrug‘i oynada **hozir** nima borligini ko‘rsatadi: qancha
+joy band, nimalar egallagan. Bu — kursdagi eng foydali buyruqlardan biri.
+Sessiya g‘alati yo‘nalishga ketsa, birinchi qiladigan ishingiz — `/context`
+ga qarash.
+
+<Check q="Loyiha CLAUDE.md si 2 000 token. Bir kunda 15 ta sessiya ochasiz. CLAUDE.md jami qancha token 'yeydi' va nega bu baribir to'g'ri bo'lishi mumkin?">
+15 × 2 000 = 30 000 token kontekst joyi (keshlash tufayli narx bundan
+ancha arzon bo‘lishi mumkin). Bu to‘g‘ri bo‘lishi mumkin, agar CLAUDE.md
+da faqat **har sessiyada kerak** bo‘ladigan narsalar bo‘lsa: build va
+test buyruqlari, loyiha qoidalari. Agentni har safar o‘sha narsani
+qidirishga majburlash ko‘proq token va vaqt oladi. Muammo CLAUDE.md
+kamdan-kam kerak bo‘ladigan tafsilotlar bilan to‘lganda boshlanadi.
+</Check>
+
+## 8. Nega uzun sessiya “charchaydi”
+
+Oddiy tilda: stolda yuzta qog‘oz bo‘lsa, kerakli bittasini topish
+qiyinlashadi. Usta ertalab aytilgan muhim gapni endi eslay olmaydi, chunki
+u qog‘ozlar ostida qolgan. Kontekst oynasi ham shunday.
+
+Hujjat buni to‘g‘ridan-to‘g‘ri aytadi: **kontekst oynasi tez to‘ladi va
+to‘lgan sari natija sifati pasayadi**. Va undan ham kuchli gap:
+**kontekst oynasi — boshqarish kerak bo‘lgan eng muhim resurs**.
+
+### 8.1 Oyna to‘lganda nima bo‘ladi
+
+Claude Code chegaraga yaqinlashganda kontekstni **avtomatik**
+boshqaradi. Hujjatdagi tartib:
+
+1. Avval **eski asbob chiqishlarini** tozalaydi (masalan, ancha oldin
+   o‘qilgan fayl matni).
+2. Kerak bo‘lsa **suhbatni qisqa xulosaga** aylantiradi (compact).
+
+Hujjat ogohlantiradi: sizning so‘rovlaringiz va muhim kod parchalari
+saqlanadi, lekin **suhbat boshidagi batafsil ko‘rsatmalar yo‘qolishi
+mumkin**. Compact’dan keyin loyiha ildizidagi CLAUDE.md va avtomatik
+xotira diskdan qayta yuklanadi.
+
+Aynan shu sabab **doimiy qoidalar CLAUDE.md da** bo‘lishi kerak, suhbat
+boshidagi bitta xabarda emas: 30-qadamdan keyin o‘sha xabar xulosaga
+siqilib, mayda tafsilotlari yo‘qolishi mumkin.
+
+<Flow nodes={["Oyna to'lmoqda", "Eski asbob chiqishlari tozalanadi", "Hali ham to'la?", "Suhbat xulosaga siqiladi", "CLAUDE.md va xotira qayta yuklanadi", "Ish davom etadi"]} caption="Avtomatik kontekst boshqaruvi. Agar oyna har xulosadan keyin darhol yana to'lsa, Claude Code bir necha urinishdan keyin to'xtaydi va xato ko'rsatadi." />
+
+### 8.2 Uch amaliy qoida
+
+1. **Bir sessiya — bir vazifa.** Bog‘liq bo‘lmagan vazifalar orasida
+   `/clear` bilan yangi sessiya boshlang. Hujjatdagi “kitchen sink”
+   (hamma narsa bir qozonda) naqshi aynan shu xato.
+2. **Ikki marta tuzatdingiz — qaytadan boshlang.** Agent bitta xatoda
+   ikki marta adashsa, hujjat tavsiyasi: `/clear` qilib, o‘rgangan
+   narsangizni hisobga olgan holda **yaxshiroq vazifa** bilan boshlash.
+   Uzun “yo‘q, bunday emas” suhbati kontekstni noto‘g‘ri urinishlar bilan
+   to‘ldiradi.
+3. **Katta o‘rganishni ajrating.** Kod bazasini keng o‘rganish kerak
+   bo‘lsa, buni subagentga topshirish mumkin: u o‘z alohida oynasida
+   ishlaydi va sizga faqat xulosani qaytaradi (11-dars).
+
+`/compact`, `/clear`, `/rewind` va boshqa kontekst buyruqlari — butun
+4-darsning mavzusi.
+
+<Check q="Sessiya boshida 'barcha pullar butun son, float ishlatma' dedingiz. 2 soatlik ishdan keyin agent float ishlata boshladi. Nima bo'lgan bo'lishi mumkin va qanday oldini olish kerak?">
+Ehtimol, kontekst to‘lib, suhbat xulosaga siqilgan va boshidagi bu
+batafsil ko‘rsatma yo‘qolgan (yoki shunchaki ko‘p narsa orasida e’tibordan
+chetda qolgan). Oldini olish: doimiy qoidalarni CLAUDE.md ga yozish
+(compact’dan keyin qayta yuklanadi), sessiyalarni qisqa tutish va
+qoidani **tekshiruv** bilan mustahkamlash — masalan, float ishlatilsa
+yiqiladigan test yoki linter qoidasi.
+</Check>
+
+## 9. Tekshiriladigan maqsad — kursning eng muhim odati
+
+Oddiy tilda: ustaga “quvurni tuzat” deysiz. U ishladi va “tayyor” dedi.
+Qanday bilasiz? Agar u suvni ochib, tomchi yo‘qligini ko‘rsatsa — bilasiz.
+Agar shunchaki “tayyor” desa — ishonasiz yoki o‘zingiz tekshirasiz. Agent
+bilan ham aynan shunday.
+
+Agent sikli tekshiruv bilan to‘xtaydi. Tekshiruv bo‘lmasa, model qachon
+to‘xtashni **taxmin** qiladi. Hujjatdagi eng muhim tavsiyalardan biri:
+
+- Claude’ga **o‘zi ishga tushira oladigan tekshiruv** bering: testlar,
+  build, solishtirish uchun skrinshot. Hujjat so‘zlari bilan: bu —
+  **siz kuzatib o‘tiradigan sessiya** bilan **tashlab ketsa bo‘ladigan
+  sessiya** orasidagi farq.
+- Ishga tushiriladigan tekshiruv bo‘lmasa, “tayyorga o‘xshaydi” — yagona
+  signal, va **tekshiruv sikli sizning o‘zingiz** bo‘lib qolasiz.
+- Claude’dan muvaffaqiyatni da’vo qilishni emas, **dalil ko‘rsatishni**
+  talab qiling.
+
+<Versus
+  left={{
+    title: "Tekshiruvsiz vazifa",
+    points: [
+      "'Login sahifasini tuzat'",
+      "Agent kodni o'zgartiradi va 'tayyor' deydi",
+      "Ishladimi — siz brauzerda tekshirasiz",
+      "Ishlamasa — yana tushuntirasiz, kontekst to'ladi",
+      "Siz sessiya oldida o'tirishingiz kerak",
+    ],
+  }}
+  right={{
+    title: "Tekshiriladigan maqsad",
+    points: [
+      "'npm test -- login yiqilyapti; tuzat, testlar yashil bo'lsin'",
+      "Agent testni o'zi ishga tushiradi",
+      "Yiqilsa — xato matnidan o'zi o'rganadi",
+      "'Tayyor' — test natijasi bilan",
+      "Siz natijani ko'rib chiqasiz, jarayonni emas",
+    ],
+  }}
+/>
+
+### 9.1 Yaxshi tekshiruvning to‘rt xususiyati
+
+1. **Agent o‘zi ishga tushira oladi.** “Menga ko‘rsat, men qarayman” —
+   tekshiruv emas. `python tekshir.py`, `npm test`, `cargo build` —
+   tekshiruv.
+2. **Natija bir ma’noli.** “Jami: 8/8 OK” yoki “3 failed” — talqin
+   talab qilmaydi.
+3. **U haqiqatan siz xohlagan narsani o‘lchaydi.** Faqat ko‘rinadigan
+   testlar o‘tsa-yu, talab bajarilmasa — tekshiruv yomon. Amaliyotdagi
+   `test_kassa.py` aynan shunday: u yaxlitlash xatosini ko‘rmaydi.
+4. **Agent uni “aldab” o‘ta olmaydi.** Testni o‘chirib yoki o‘zgartirib
+   yashil qilish mumkin bo‘lsa — buni taqiqlang va **diff’ni
+   tekshiring**. `tekshir.py` shu sabab test fayli o‘zgarmaganini ham
+   tekshiradi.
+
+### 9.2 Tekshiruv zinapoyasi
+
+Hujjat tekshiruvni kuchaytirishning bir necha pog‘onasini sanaydi. Ular
+kursning keyingi darslarida birma-bir keladi:
+
+| Pog‘ona | Qanday | Qaysi darsda |
+| --- | --- | --- |
+| Vazifadagi ko‘rsatma | “Oxirida testlarni ishga tushir va natijani ko‘rsat” | Shu dars, 6-dars |
+| `/goal` sharti | Shart bajarilmaguncha ish davom etadi | 7-dars |
+| Stop hook | Skript o‘tmaguncha agent to‘xtay olmaydi | 7, 12-darslar |
+| Tekshiruvchi subagent | Toza kontekstli alohida agent natijani ko‘rib chiqadi | 7, 11-darslar |
+
+<Callout type="maslahat" title="Bitta odat">
+Har vazifaga bitta jumla qo‘shing: **“Tayyor degani — [buyruq] [natija]
+beradi.”** Masalan: “Tayyor degani — `npm test` xatosiz o‘tadi va `npm run
+lint` ogohlantirish bermaydi.” Bu jumla agent siklining to‘xtash shartini
+taxmindan o‘lchovga aylantiradi.
+</Callout>
+
+<Check q="Agent 'barcha testlar o'tdi' dedi. Siz git diff da test faylidan ikkita assert o'chirilganini ko'rdingiz. Bu qaysi xato naqshi va qanday oldini olish kerak?">
+Bu — tekshiruvning 4-xususiyati buzilishi: agent maqsadga “aldab”
+yetgan. Hujjatdagi “trust-then-verify gap” (ishonib, tekshirmaslik)
+naqshiga yaqin. Oldini olish: vazifada test fayllarini o‘zgartirishni
+aniq taqiqlash, diff’ni har doim ko‘rib chiqish, kuchliroq himoya uchun
+test fayllariga tahrir qilishni ruxsat qoidasi yoki hook bilan bloklash
+(3 va 12-darslar).
+</Check>
+
+## 10. Siz siklning qayerida turasiz
+
+Oddiy tilda: siz — haydovchi yonidagi instruktor. Rul uning qo‘lida,
+lekin sizda tormoz pedali bor. Yaxshi instruktor har burilishda
+aralashmaydi, lekin noto‘g‘ri ko‘chaga burilganda **darhol** aytadi —
+o‘n kilometr yurgandan keyin emas.
+
+Hujjatda tasdiqlangan boshqaruv usullari:
+
+| Harakat | Qanday | Nima bo‘ladi |
+| --- | --- | --- |
+| To‘xtatish | `Esc` | Joriy javob yoki asbob chaqiruvi bekor qilinadi, Claude keyingi ko‘rsatmangizni kutadi. Shu paytgacha qilingan ish saqlanadi |
+| Yo‘l-yo‘lakay tuzatish | Ish davomida yozib, `Enter` | Xabar navbatga qo‘yiladi. Claude uni joriy asbob chaqiruvlari tugashi bilan, shu aylanish ichida o‘qiydi |
+| Orqaga qaytish | Bo‘sh kiritishda `Esc` `Esc` yoki `/rewind` | Rewind menyusi: kodni, suhbatni yoki ikkalasini oldingi nuqtaga qaytarish |
+| Rejimni almashtirish | `Shift+Tab` | Ruxsat rejimlari orasida aylanish (3-dars) |
+| Uzun vazifani muharrirda yozish | `Ctrl+G` | So‘rovni standart matn muharririda tahrirlash |
+| O‘zingiz buyruq ishga tushirish | So‘rov boshida `!` | Shell rejimi: buyruq bajariladi, chiqishi sessiyaga qo‘shiladi va Claude unga javob beradi |
+| Faylni ko‘rsatish | `@` va fayl yo‘li | Fayl yo‘lini avtomatik to‘ldirish; Claude aynan qaysi fayl haqida gapirayotganingizni biladi |
+
+### 10.1 Qachon to‘xtatish kerak
+
+Agent birinchi bir-ikki asbob chaqiruvida **qaysi yo‘ldan ketayotganini**
+ko‘rsatadi. Shu paytda kuzating:
+
+- Noto‘g‘ri papka yoki faylni o‘qiyapti → `Esc`, to‘g‘ri yo‘lni ko‘rsating.
+- Siz so‘ramagan narsani “yaxshilashga” kirishdi → `Esc`, chegarani
+  aniqlashtiring.
+- Bir xil buyruqni qayta-qayta ishga tushiryapti → `Esc`, sababini
+  so‘rang yoki yangi sessiya oching.
+- Hech narsa o‘zgartirmasdan cheksiz o‘qiyapti → hujjatdagi “infinite
+  exploration” naqshi. To‘xtating va o‘rganishni toraytiring yoki
+  subagentga bering.
+
+Erta to‘xtatish **arzon**: kontekstda bir-ikki keraksiz qadam qoladi
+xolos. Kech to‘xtatish **qimmat**: o‘nlab noto‘g‘ri tahrir, to‘lgan
+kontekst va qaytarish kerak bo‘lgan o‘zgarishlar.
+
+<Check q="Agent ishlayotganda siz muhim narsani esladingiz: 'eski API ham qo'llab-quvvatlansin'. Esc bosish kerakmi yoki shunchaki yozish yetarlimi?">
+Ko‘pincha shunchaki yozib `Enter` bosish yetarli: hujjatga ko‘ra xabar
+navbatga qo‘yiladi va Claude uni joriy asbob chaqiruvlari tugashi bilan
+o‘qiydi. Agar agent hozir aynan siz to‘xtatmoqchi bo‘lgan noto‘g‘ri
+harakatni qilayotgan bo‘lsa (masalan, eski API’ni o‘chiryapti), avval
+`Esc` bilan to‘xtatib, keyin yozgan ma’qul.
+</Check>
+
+## 11. Nimani qaytarib bo‘ladi va nimani yo‘q
+
+Oddiy tilda: matn muharririda “bekor qilish” (Ctrl+Z) bor. Lekin
+yuborilgan xatni qaytarib bo‘lmaydi. Agent ham shunday: **lokal
+fayllardagi** o‘zgarishlarning ko‘pini qaytarsa bo‘ladi, **tashqi
+dunyoga** ta’sir qilgan harakatni — yo‘q.
+
+Hujjatga ko‘ra Claude faylni tahrirlashdan oldin uning joriy holatini
+**checkpoint** sifatida saqlaydi. Checkpoint’lar git’dan alohida.
+Fayl tahrirlari qaytariladi: `Esc` `Esc` yoki `/rewind` bilan oldingi
+holatga qaytish mumkin.
+
+Lekin muhim istisnolar bor:
+
+| Harakat | Rewind qaytaradimi | Nega |
+| --- | --- | --- |
+| `Edit` yoki `Write` bilan fayl tahriri | Ha | Checkpoint aynan shular uchun |
+| Bash orqali o‘zgarish (`rm`, `mv`, `sed -i`, skript) | Yo‘q | Hujjatga ko‘ra checkpoint faqat fayl tahrirlash asboblari o‘zgarishini kuzatadi |
+| Ma’lumotlar bazasiga yozish | Yo‘q | Masofaviy tizim |
+| API chaqiruvi, xabar yuborish | Yo‘q | Masofaviy tizim |
+| Deploy, `git push` | Yo‘q | Masofaviy tizim |
+| Boshqa dastur yoki sessiya o‘zgartirgan fayl | Yo‘q | Checkpoint ularni ko‘rmaydi |
+
+Hujjat buni aniq aytadi: masofaviy tizimlarga (ma’lumotlar bazalari,
+API’lar, deploy’lar) ta’sir qiladigan harakatlarni checkpoint’ga olib
+bo‘lmaydi — ularni **ruxsat rejimi va ruxsat qoidalari** bilan
+boshqarasiz. Hujjat yana bir narsani ta’kidlaydi: checkpoint **versiya
+nazoratining o‘rnini bosmaydi**.
+
+<Callout type="ogoh" title="Amaliy qoida">
+Qaytarib bo‘lmaydigan har bir harakat — **sizning ongli “Ha” ingiz**
+bilan bo‘lishi kerak. Shuning uchun boshlanishda Manual (standart)
+rejimda ishlang va Bash buyruqlarini o‘qib ruxsat bering. Muhim ishdan
+oldin git commit qiling: git — eng ishonchli “bekor qilish” tugmasi.
+</Callout>
+
+<Check q="Agent Bash orqali 'rm -rf build/ && python gen.py' ishga tushirdi, keyin siz /rewind qildingiz. build/ papkasi qaytadimi?">
+Yo‘q. Hujjatga ko‘ra checkpoint faqat Claude’ning fayl tahrirlash
+asboblari (Edit, Write) orqali qilingan o‘zgarishlarni kuzatadi. Bash
+orqali o‘chirilgan yoki yaratilgan fayllar checkpoint’ga tushmaydi. Agar
+`build/` git’da bo‘lsa — git bilan tiklaysiz; bo‘lmasa, uni qayta
+generatsiya qilish kerak.
+</Check>
+
+## 12. Sessiyalar mustaqil: agent nimani eslaydi
+
+Oddiy tilda: bu darsning boshidagi hamkasbni eslang — u har kuni
+ertalab kechagi suhbatni eslamay keladi, faqat stolidagi yozuvlarni
+o‘qiydi. Claude Code sessiyalari aynan shunday.
+
+Hujjat aytadi: **sessiyalar mustaqil**. Har yangi sessiya yangi kontekst
+oynasi bilan, oldingi sessiyalardagi suhbat tarixisiz boshlanadi.
+
+Sessiyalar orasida saqlanadigan narsalar:
+
+| Nima | Qanday ishlaydi | Batafsil |
+| --- | --- | --- |
+| CLAUDE.md | Siz (yoki jamoa) yozgan doimiy ko‘rsatmalar, har sessiyada yuklanadi | 5-dars |
+| Avtomatik xotira | Claude o‘zi yozadigan eslatmalar; MEMORY.md ning birinchi 200 qatori yoki 25 KB (qaysi biri oldin kelsa) har sessiya boshida yuklanadi | 5-dars |
+| Fayllar va git | Kodning o‘zi, commit tarixi, siz yozgan hujjatlar | 8-dars |
+| Sessiya tarixi | `~/.claude/projects/` ostida oddiy matnli JSONL fayl; `--continue` yoki `--resume` bilan davom ettirish mumkin | 4-dars |
+
+Davom ettirish haqida bitta nozik farq. `claude --continue` yoki
+`claude --resume` sessiyani **o‘sha** identifikator bilan qayta ochadi —
+tarix ham, kontekst ham davom etadi. `--fork-session` yoki `/branch` esa
+tarixni **yangi** sessiyaga nusxalaydi: asl sessiyaga tegmasdan boshqa
+yo‘lni sinab ko‘rish uchun.
+
+<Callout type="maslahat" title="Kunlik ish uchun xulosa">
+Ertaga ham kerak bo‘ladigan bilimni **sessiyada qoldirmang** — uni
+faylga yozing: loyiha qoidalari CLAUDE.md ga, katta vazifa rejasi
+`PLAN.md` yoki `SPEC.md` ga, qarorlar commit xabariga. Shunda yangi
+sessiya o‘sha fayllarni o‘qib, toza kontekst bilan ishni davom
+ettiradi.
+</Callout>
+
+<Check q="Kecha uzoq sessiyada agentga loyihaning arxitekturasini tushuntirdingiz. Bugun yangi sessiya ochdingiz va u hech narsani bilmaydi. Nega va keyingi safar nima qilish kerak?">
+Sessiyalar mustaqil: yangi sessiya kechagi suhbat tarixini ko‘rmaydi
+(agar `--continue` yoki `--resume` qilinmagan bo‘lsa). Doimiy bilim
+CLAUDE.md da yoki loyihadagi hujjatda bo‘lishi kerak. Kechagi sessiya
+oxirida agentdan arxitektura xulosasini faylga yozishni so‘rash mumkin
+edi — keyin har yangi sessiya undan foydalanadi.
+</Check>
+
+## 13. Yaxshi va yomon vazifa: besh juftlik
+
+Oddiy tilda: yangi hamkasbga “anavi narsani tuzatib qo‘y” desangiz, u
+yo so‘raydi, yo o‘zicha taxmin qiladi. Agent ham ko‘pincha **taxmin
+qiladi**. Yaxshi vazifa taxmin uchun joy qoldirmaydi: nima, qayerda,
+qanday cheklov bilan va “tayyor” nimani anglatadi.
+
+Hujjatdagi maslahatlar: vazifani aniq chegaralang, manbaga ishora qiling,
+mavjud naqshlarga havola bering, muammo belgilarini tasvirlang va
+“tuzatildi” nimani anglatishini ayting. Quyida shu maslahatlar asosida
+beshta juftlik.
+
+### 13.1 Xato tuzatish
+
+<Versus
+  left={{
+    title: "Noaniq",
+    points: ["'Login ishlamayapti, tuzat'"],
+  }}
+  right={{
+    title: "Aniq",
+    points: [
+      "'Sessiya muddati tugagach login yiqilyapti. src/auth/ dagi token yangilanishini tekshir. Avval muammoni ko'rsatadigan yiqiladigan test yoz, keyin tuzat. Tayyor degani: npm test -- auth yashil'",
+    ],
+  }}
+/>
+
+Farq: **belgi** (qachon yiqiladi), **joy** (qayerdan qidirish),
+**tartib** (avval yiqiladigan test) va **tayyor sharti** (qaysi buyruq).
+
+### 13.2 Yangi funksiya
+
+<Versus
+  left={{
+    title: "Noaniq",
+    points: ["'Sahifaga qidiruv qo'sh'"],
+  }}
+  right={{
+    title: "Aniq",
+    points: [
+      "'Mahsulotlar sahifasiga nom bo'yicha qidiruv qo'sh. Filtrlash qanday qilinganini components/OrderFilter.tsx dan ko'r va xuddi shu naqshni ishlat. Yangi kutubxona qo'shma. Tayyor degani: npm test va npm run lint toza, yangi komponentga kamida bitta test'",
+    ],
+  }}
+/>
+
+Farq: **mavjud naqshga havola** — agent loyihaning uslubini
+“ixtiro” qilmaydi, balki bor narsani takrorlaydi. **Cheklov** (yangi
+kutubxona yo‘q) — agentning eng ko‘p uchraydigan “yaxshilash” odatini
+oldindan to‘xtatadi.
+
+### 13.3 Kodni tushunish
+
+<Versus
+  left={{
+    title: "Noaniq",
+    points: ["'Bu loyiha qanday ishlaydi?'"],
+  }}
+  right={{
+    title: "Aniq",
+    points: [
+      "'To'lov so'rovi API'dan bazagacha qaysi fayllardan o'tadi? Faqat o'qi, hech narsani o'zgartirma. Javobni fayl:qator havolalari bilan, 15 qatordan oshirmay yoz'",
+    ],
+  }}
+/>
+
+Farq: **tor savol** — agent butun loyihani o‘qib, kontekstni
+to‘ldirmaydi. **“Faqat o‘qi”** — tasodifiy o‘zgarish yo‘q. **Javob
+shakli** — tekshirsa bo‘ladigan havolalar.
+
+### 13.4 Refaktor
+
+<Versus
+  left={{
+    title: "Noaniq",
+    points: ["'Kodni tozala'"],
+  }}
+  right={{
+    title: "Aniq",
+    points: [
+      "'utils/date.ts dagi uchta takroriy formatlash funksiyasini bittaga birlashtir. Tashqi xulq o'zgarmasin: mavjud testlar o'zgarishsiz o'tishi shart. Boshqa fayllarga faqat import yo'lini almashtirish uchun teg'",
+    ],
+  }}
+/>
+
+Farq: refaktorning ta’rifi — **xulq o‘zgarmaydi**. Buni isbotlaydigan
+narsa — o‘zgarmagan testlar. **Ta’sir doirasi** aniq chegaralangan.
+
+### 13.5 Shablon
+
+Beshala juftlikdagi “aniq” vazifalar bitta skeletga tushadi:
+
+```text
+Nima:      [bir-ikki gapda vazifa]
+Qayerda:   [fayl, papka yoki modul; o'xshash naqsh qayerda]
+Cheklov:   [nimaga tegmaslik; nima qo'shmaslik]
+Tayyor:    [qaysi buyruq qanday natija beradi]
+Dalil:     [oxirida nimani ko'rsatish: test chiqishi, git diff --stat]
+```
+
+Har vazifaga beshala qator shart emas. Hujjat ham ogohlantiradi: o‘zgarishni
+bir gapda tasvirlab bo‘lsa, alohida rejalashtirish shart emas. Lekin
+**“Tayyor”** qatori deyarli har doim foyda beradi.
+
+<Check q="'Kodni tozala' vazifasining eng xavfli tomoni nima?">
+Chegarasi yo‘q. Agent o‘zi “toza” deb hisoblagan narsani qiladi:
+nomlarni o‘zgartiradi, fayllarni ko‘chiradi, kutubxona qo‘shadi. Diff
+katta bo‘ladi, ko‘rib chiqish qiyinlashadi, xulq o‘zgarishi mumkin va
+buni isbotlaydigan tekshiruv yo‘q. Yaxshi refaktor vazifasi ta’sir
+doirasini va “xulq o‘zgarmaydi” degan tekshiruvni beradi.
+</Check>
+
+## 14. Besh xato naqsh
+
+Oddiy tilda: har kasbda yangi boshlovchilar bir xil xatolarni qiladi.
+Rasmiy hujjat Claude Code bilan ishlashdagi eng ko‘p uchraydigan beshta
+naqshni nomma-nom sanaydi. Ularni bilish — yarim yechim.
+
+<TradeOffs
+  rows={[
+    {
+      choice: "Kitchen sink session — hamma narsa bir sessiyada",
+      pro: "Belgisi: bitta vazifadan boshlab, aloqasiz savol berasiz, keyin birinchisiga qaytasiz. Kontekst aloqasiz ma'lumot bilan to'ladi",
+      con: "Yechim: aloqasiz vazifalar orasida /clear",
+    },
+    {
+      choice: "Correcting over and over — qayta-qayta tuzatish",
+      pro: "Belgisi: agent bir xatoda adashadi, siz tuzatasiz, yana adashadi. Kontekst noto'g'ri urinishlar bilan to'ladi",
+      con: "Yechim: ikki marta tuzatgandan keyin /clear va o'rganganingizni hisobga olgan yaxshiroq vazifa",
+    },
+    {
+      choice: "Over-specified CLAUDE.md — haddan tashqari uzun CLAUDE.md",
+      pro: "Belgisi: CLAUDE.md shunchalik uzunki, muhim qoidalar shovqin ichida yo'qoladi",
+      con: "Yechim: qisqartiring; Claude baribir to'g'ri qiladigan narsani yozmang; qat'iy qoidani hook'ga aylantiring (5, 12-darslar)",
+    },
+    {
+      choice: "Trust-then-verify gap — ishonib, tekshirmaslik",
+      pro: "Belgisi: natija ishonarli ko'rinadi, lekin chekka holatlar ko'rib chiqilmagan",
+      con: "Yechim: har doim tekshiruv bering — test, skript, skrinshot. Tekshira olmasangiz, topshirmang",
+    },
+    {
+      choice: "Infinite exploration — cheksiz o'rganish",
+      pro: "Belgisi: 'shuni o'rganib chiq' deysiz, agent yuzlab faylni o'qib, kontekstni to'ldiradi",
+      con: "Yechim: o'rganishni toraytiring yoki subagentga topshiring (11-dars)",
+    },
+  ]}
+/>
+
+Beshala naqshning umumiy ildizi bitta: **kontekst va tekshiruv
+boshqarilmagan**. Birinchi, ikkinchi va beshinchi naqsh — kontekstni
+keraksiz narsa bilan to‘ldirish. Uchinchisi — doimiy kontekstni
+to‘ldirish. To‘rtinchisi — tekshiruvning yo‘qligi.
+
+<Check q="Siz 40 daqiqadan beri bitta xatoni tuzatyapsiz, agentga besh marta 'yo'q, bunday emas' dedingiz. Hujjat tavsiyasiga ko'ra nima qilish kerak?">
+Bu — “correcting over and over” naqshi. Kontekst endi beshta
+noto‘g‘ri urinish va ularning muhokamasi bilan to‘lgan; bu keyingi
+urinishlarga ham xalaqit beradi. Tavsiya: `/clear` (yoki yangi sessiya)
+va o‘rgangan narsangizni hisobga olgan **yangi, aniqroq** vazifa:
+belgilar, nimalar ishlamagani va “tayyor” sharti bilan.
+</Check>
+
+## 15. Afsonalar va haqiqat
+
+Claude Code haqida eng ko‘p uchraydigan noto‘g‘ri tasavvurlar va ularning
+rasmiy hujjatdagi javobi.
+
+| Afsona | Haqiqat | Qayerda batafsil |
+| --- | --- | --- |
+| “Agent ertaga bugungi suhbatni eslaydi” | Sessiyalar mustaqil; faqat CLAUDE.md, avtomatik xotira va fayllar saqlanadi | 12-bo‘lim, 5-dars |
+| “Katta kontekst oynasi bo‘lsa, hamma narsani bitta sessiyada qilaman” | Oyna to‘lgan sari sifat pasayadi; kontekst — eng muhim resurs | 8-bo‘lim, 4-dars |
+| “CLAUDE.md ga yozgan taqiq — xavfsizlik” | CLAUDE.md — tavsiya; majburiy chegara — ruxsatlar, sandbox, hooks | 4-bo‘lim, 3-dars |
+| “Agent ‘tayyor’ dedi — demak tayyor” | Dalil talab qiling: tekshiruv natijasi va diff | 9-bo‘lim, 7-dars |
+| “Rewind har narsani qaytaradi” | Faqat Edit/Write tahrirlari; Bash, baza, API, deploy — yo‘q | 11-bo‘lim |
+| “`.claudeignore` maxfiy fayllarni yashiradi” | Hujjatga ko‘ra bu faylning hech qanday ta’siri yo‘q; `Read` uchun deny qoidasi kerak | 3-dars |
+| “Vazifa qancha qisqa bo‘lsa, shuncha yaxshi” | Qisqa — yaxshi, noaniq — yomon; “tayyor” sharti deyarli har doim kerak | 13-bo‘lim |
+
+## 16. Butun dars o‘nta gapda
+
+1. Claude Code — **agent**: u faqat maslahat bermaydi, asboblar orqali
+   o‘qiydi, tahrirlaydi va buyruq ishga tushiradi.
+2. Har vazifa **sikl**: kontekst yig‘ish → harakat → tekshirish; xato
+   tuzatishda bu sikl ko‘p marta aylanadi.
+3. **Model** o‘ylaydi, **harness** (Claude Code) asbob, kontekst va
+   ruxsatlarni boshqaradi; so‘z — tavsiya, sozlama — majburiyat.
+4. Model **faqat kontekstdagi** narsani biladi: o‘qimagan faylni ham,
+   aytilmagan talabni ham bilmaydi.
+5. Hamma narsa **tokenda** o‘lchanadi: joy ham, narx ham; o‘rtacha fayl
+   bir necha ming token.
+6. Kontekst oynasi — **ish stoli**: cheklangan, to‘lgan sari sifat
+   pasayadi; `/context` bilan kuzating.
+7. **Bir sessiya — bir vazifa**; ikki marta tuzatgandan keyin `/clear`
+   va yaxshiroq vazifa.
+8. Har vazifaga **tekshiriladigan maqsad** bering va “tayyor” uchun
+   **dalil** talab qiling — bu kursning eng muhim odati.
+9. **Erta to‘xtating** (`Esc`), lekin bilingki rewind faqat fayl
+   tahrirlarini qaytaradi — tashqi dunyoga ta’sirni emas.
+10. Sessiyalar mustaqil: ertaga kerak bo‘ladigan bilimni **faylga**
+    yozing — CLAUDE.md, reja, commit xabari.
+
+## 17. Amaliyot
+
+Amaliyot — kichik **kassa** loyihasi. Unda xatolar bor, qoidalar
+`README.md` da yozilgan, `tekshir.py` esa kod qoidalarni bajarishini
+tekshiradi. Siz bitta loyihada **ikki xil sessiya** o‘tkazasiz va
+farqni o‘z ko‘zingiz bilan ko‘rasiz. Faqat Python 3.9+ standart
+kutubxonasi kerak. Claude Code’ni o‘rnatish — 2-darsda. Hali o‘rnatmagan
+bo‘lsangiz, 1-darajani hozir bajaring, qolganini 2-darsdan keyin.
+
+<Download file="kassa.zip" title="Amaliyot fayllarini yuklab olish" files="kassa.py, test_kassa.py, tekshir.py, README.md, JURNAL.md" />
+
+| Fayl | Nima |
+| --- | --- |
+| `kassa.py` | Chek hisoblaydigan kod — **xatolari bor** |
+| `test_kassa.py` | Ko‘rinadigan testlar. O‘zgartirilmaydi |
+| `tekshir.py` | Qabul tekshiruvi: sakkizta tekshiruv. O‘zgartirilmaydi |
+| `README.md` | Qoidalar (spetsifikatsiya) va topshiriqlar |
+| `JURNAL.md` | Kuzatuvlaringiz uchun shablon |
+
+Boshlashdan oldin papkani git repoga aylantiring — har sessiyadan keyin
+toza holatga qaytish uchun:
+
+```bash
+git init && git add . && git commit -m "boshlang'ich holat"
+```
+
+<Task title="1-daraja: agentdan oldin (10 daqiqa, Claude'siz)">
+`python -m unittest -v` va `python tekshir.py` ni ishga tushiring.
+`JURNAL.md` ning birinchi bo‘limini to‘ldiring: nechta test yiqildi,
+`tekshir.py` nechta xato topdi va agent ishni bajarishi uchun qaysi
+fayllarni o‘qishi **shart** deb o‘ylaysiz. Bu — sizning “kontekst
+rejangiz”. Keyin uni agentning haqiqiy harakati bilan solishtirasiz.
+</Task>
+
+<Task title="2-daraja: A sessiya — noaniq vazifa">
+Manual (standart) rejimda Claude Code’ni oching va **faqat** shuni
+yozing: `testlar o'tmayapti, tuzatib ber`. Har ruxsat so‘rovini o‘qing.
+Agent tugatgach, unga hech narsa demasdan `python tekshir.py` va `git
+diff --stat` ni ishga tushiring. Sessiya ichida `/context` ni ham
+yozib ko‘ring. JURNAL’ning A bo‘limini to‘ldiring: asbob chaqiruvlari,
+agent README’ni o‘qidimi, testlarni o‘zi ishga tushirdimi, natija.
+Keyin `git checkout -- .` bilan toza holatga qayting.
+</Task>
+
+<Task title="3-daraja: B sessiya — tekshiriladigan maqsad">
+**Yangi** sessiya oching. 13.5 dagi shablon bo‘yicha vazifa yozing:
+qoidalar qayerda, “tayyor” nimani anglatadi (qaysi buyruq qanday natija
+berishi kerak), nimaga tegmaslik kerak, oxirida qanday dalil
+ko‘rsatish kerak. B bo‘limini to‘ldiring va A bilan solishtiring:
+asbob chaqiruvlari soni, tekshir.py natijasi, siz qancha marta
+aralashdingiz.
+</Task>
+
+<Task title="4-daraja: o'z tekshiruvingiz">
+`tekshir.py` ni ochmasdan, `test_meniki.py` faylida bitta test yozing.
+U **asl** `kassa.py` (`git stash` yoki boshlang‘ich commit) dagi
+yaxlitlash xatosini ushlashi kerak. Nega `test_kassa.py` bu xatoni
+ko‘rmagan — JURNAL’ga bir gap bilan yozing. Bonus: yangi sessiyada
+agentdan diff’ni README qoidalari bilan solishtirib, **faqat qoida
+buzilishlarini** sanab berishni so‘rang.
+</Task>
+
+**Tekshiruv mezoni:** `python tekshir.py` oxirida `Jami: 8/8 OK`;
+`git diff` da `test_kassa.py` va `tekshir.py` o‘zgarmagan; JURNAL’dagi
+to‘rtta bo‘lim to‘ldirilgan.
+
+<Deep title="Nega A sessiya ko'pincha 'yarim' tugaydi">
+`test_kassa.py` dagi ko‘rinadigan testlar faqat ikkita xatoni ushlaydi:
+chegirma chegarasi va QQS formulasi. “Testlar o‘tmayapti, tuzat” degan
+vazifada eng qisqa yo‘l — shu ikkitasini tuzatish. Testlar yashil bo‘ladi
+va agent to‘xtaydi: uning nuqtai nazaridan maqsadga yetildi.
+
+Qolgan uchta xato — `round()` ning 0.5 ni juft songa yaxlitlashi (Python
+`round(12.5)` 12 qaytaradi), noma’lum promokodni jim o‘tkazib yuborish va
+noto‘g‘ri mahsulotni tekshirmaslik — faqat `README.md` qoidalarida va
+`tekshir.py` da ko‘rinadi. Agent ularni topishi uchun yo README’ni
+o‘zi o‘qishga qaror qilishi, yo siz vazifada shu manbalarni ko‘rsatishingiz
+kerak.
+
+Bu — 9.1 dagi uchinchi xususiyatning jonli misoli: **tekshiruv siz
+xohlagan narsani o‘lchashi kerak**. Ko‘rinadigan testlar talabning bir
+qismini o‘lchaydi xolos. Ba’zan A sessiya ham hammasini to‘g‘ri tuzatadi —
+model README’ni o‘zi o‘qishga qaror qiladi. Unda ham savol qoladi:
+**siz buni qanday bildingiz?**
+</Deep>
+
+<Deep title="tekshir.py qanday ishlaydi">
+Sakkizta tekshiruv: test fayli o‘zgarmaganini SHA-256 xesh bilan
+solishtirish, ko‘rinadigan testlar, chegirma va QQS yaxlitlashining
+chegaraviy holatlari (12.5, 4.5 kabi), noma’lum promokod va noto‘g‘ri
+mahsulot uchun `ValueError`, bo‘sh chek va 300 ta tasodifiy chekda
+qoidalarning bajarilishi.
+
+Tekshiruvning o‘zi ham tekshirilgan: to‘g‘ri yechimga 22 ta ataylab
+xato kiritildi (aksiya formulasi, chegara, yaxlitlash usuli, validatsiya
+va boshqalar) — `tekshir.py` ularning hammasini ushladi.
+
+Bir halol eslatma: qat’iyatli agent `tekshir.py` ning o‘zini ham
+o‘zgartirishi mumkin. Xesh faqat `test_kassa.py` ni himoya qiladi. Shu
+sabab tekshiruv mezonida `git diff` bor — oxirgi tekshiruvchi baribir
+siz. Buni harness darajasida qanday bloklash mumkinligi 3 va 12-darslarda.
+</Deep>
+
+## 18. Nazorat savollari
+
+<QA q="Agent sikli qaysi uch bosqichdan iborat va ular har doim ketma-ket keladimi?">
+Kontekst yig‘ish, harakat qilish, natijani tekshirish. Hujjatga ko‘ra
+bosqichlar bir-biriga aralashadi: savolga javob uchun faqat birinchisi
+yetishi mumkin, xato tuzatish esa uchalasidan qayta-qayta o‘tadi.
+</QA>
+
+<QA q="'Agentic harness' nima va u nima uchun alohida tushuncha?">
+Model atrofidagi qatlam: asboblarni beradi, kontekstni boshqaradi,
+ruxsatlarni ijro etadi. Alohida tushuncha, chunki u **majburiy**
+ishlaydi — ruxsat qoidalari model nima qilishga urinishidan qat’i nazar
+amal qiladi. Model xulqi esa so‘z bilan (tavsiya sifatida) boshqariladi.
+</QA>
+
+<QA q="Nega 'model faqat kontekstdagi narsani biladi' degan qoida vazifa yozishga ta'sir qiladi?">
+Agent siz aytmagan talabni, u o‘qimagan faylni yoki ishga tushirmagan
+testni bilmaydi. Shuning uchun vazifada qayerdan qidirish, qaysi
+qoidalar manbasi, qaysi naqshni takrorlash va qanday tekshirishni
+ko‘rsatish kerak — aks holda agent taxmin qiladi.
+</QA>
+
+<QA q="Kontekst oynasi to'layotganda Claude Code avtomatik nima qiladi va buning qanday xavfi bor?">
+Avval eski asbob chiqishlarini tozalaydi, kerak bo‘lsa suhbatni
+xulosaga siqadi. So‘rovlar va muhim kod saqlanadi, lekin suhbat
+boshidagi batafsil ko‘rsatmalar yo‘qolishi mumkin. Shuning uchun doimiy
+qoidalar CLAUDE.md da bo‘lishi kerak — u compact’dan keyin qayta
+yuklanadi.
+</QA>
+
+<QA q="Sessiya boshida, siz hech narsa yozmasdan oldin kontekstda nimalar bo'ladi?">
+Tizim ko‘rsatmalari, avtomatik xotira (MEMORY.md boshi), muhit
+ma’lumoti, MCP asboblari nomlari, skill tavsiflari, shaxsiy va loyiha
+CLAUDE.md lari. Hujjatdagi illyustratsiyada bular jami ~7 850 token.
+</QA>
+
+<QA q="Yaxshi tekshiruvning to'rt xususiyatini sanang.">
+Agent o‘zi ishga tushira oladi; natija bir ma’noli; u haqiqatan siz
+xohlagan narsani o‘lchaydi; agent uni “aldab” (testni o‘zgartirib) o‘ta
+olmaydi yoki buni diff’da ko‘rasiz.
+</QA>
+
+<QA q="Esc va Esc Esc ning farqi nima?">
+`Esc` joriy javob yoki asbob chaqiruvini to‘xtatadi, shu paytgacha
+qilingan ish saqlanadi, Claude keyingi ko‘rsatmani kutadi. Bo‘sh
+kiritishda `Esc` `Esc` rewind menyusini ochadi: kod va/yoki suhbatni
+oldingi nuqtaga qaytarish mumkin. Kiritishda matn bo‘lsa, `Esc` `Esc`
+avval qoralamani tozalaydi.
+</QA>
+
+<QA q="Qaysi o'zgarishlarni rewind qaytara olmaydi?">
+Bash orqali qilingan fayl o‘zgarishlari, boshqa dastur yoki sessiya
+o‘zgartirgan fayllar va tashqi tizimlarga ta’sir: ma’lumotlar bazasiga
+yozish, API chaqiruvlari, xabarlar, deploy, `git push`. Ular ruxsat
+rejimi va qoidalari bilan boshqariladi; git esa eng ishonchli zaxira.
+</QA>
+
+<QA q="Agent bir xil xatoda uchinchi marta adashdi. Nima qilasiz?">
+“Correcting over and over” naqshi. Kontekst noto‘g‘ri urinishlar bilan
+to‘lgan. `/clear` (yoki yangi sessiya) va o‘rganganlaringizni hisobga
+olgan aniqroq vazifa: belgilar, nima ishlamagani, qayerdan qidirish,
+“tayyor” sharti.
+</QA>
+
+<QA q="Nega Linux'da sessiya jurnalida Grep asbobi ko'rinmasligi mumkin?">
+Hujjatga ko‘ra macOS, Linux va WSL da `Glob` va `Grep` asboblari
+standart to‘plamda yo‘q; qidiruv Bash orqali `find` va `grep` bilan
+bajariladi. Windows’da ular standart to‘plamda bor.
+</QA>
+
+<QA q="'Ertaga davom etamiz' — agent ertaga bugungi ishni qanday 'eslaydi'?">
+O‘zi eslamaydi: sessiyalar mustaqil. Variantlar: `claude --continue` /
+`--resume` bilan aynan shu sessiyani davom ettirish, yoki (yaxshirog‘i
+uzoq ish uchun) bugungi xulosani faylga yozdirish — reja, CLAUDE.md
+yangilanishi, commit xabari — va ertaga toza sessiyada shu fayldan
+boshlash.
+</QA>
+
+<QA q="Bir vazifa uchun 'tayyor' shartini yozing: 'API'ga sahifalash qo'sh'.">
+Masalan: “Tayyor degani — `GET /orders?page=2&limit=20` uchun yangi
+testlar yozilgan va `npm test` to‘liq o‘tadi; mavjud testlar
+o‘zgartirilmagan; oxirida test chiqishi va `git diff --stat` ni
+ko‘rsat.” Asosiysi: buyruq, kutilgan natija va dalil.
+</QA>
+
+## 19. Lug‘at
+
+| Atama | Ma’nosi |
+| --- | --- |
+| Agent | Asboblar orqali harakat qila oladigan va natijaga qarab keyingi qadamni tanlaydigan model |
+| Agent sikli | Kontekst yig‘ish → harakat → tekshirish aylanasi |
+| Harness (agentic harness) | Model atrofidagi qatlam: asboblar, kontekst boshqaruvi, ruxsatlar |
+| Asbob (tool) | Agent chaqira oladigan amal: `Read`, `Edit`, `Bash`… |
+| Token | Model matnni bo‘lib o‘qiydigan birlik; joy va narx o‘lchovi |
+| Kontekst oynasi | Model bir vaqtda “ko‘ra” oladigan matn hajmi |
+| Compact | Kontekstni qisqa xulosaga siqish |
+| Prompt caching | Takrorlanadigan kontekst qismini arzonroq qayta ishlatish |
+| Checkpoint | Claude fayl tahriridan oldin saqlaydigan holat; rewind uchun |
+| Rewind | Kod va/yoki suhbatni checkpoint’ga qaytarish |
+| Manual (standart) rejim | Fayl tahriri va shell buyrug‘idan oldin ruxsat so‘raydigan rejim |
+| CLAUDE.md | Har sessiyada yuklanadigan loyiha ko‘rsatmalari |
+| Avtomatik xotira | Claude o‘zi yozadigan, sessiyalar orasida saqlanadigan eslatmalar (MEMORY.md) |
+| Tekshiriladigan maqsad | Agent o‘zi ishga tushira oladigan, bir ma’noli “tayyor” sharti |
+| Subagent | O‘z alohida kontekst oynasida ishlaydigan yordamchi agent |
+| Spetsifikatsiya | Talablar ro‘yxati; amaliyotda README’dagi “Qoidalar” |
+
+## 20. Raqamlar manbasi
+
+| Raqam | Qiymat | Manba |
+| --- | --- | --- |
+| Sessiya boshidagi yuklama | 4 200 + 680 + 280 + 120 + 450 + 320 + 1 800 = 7 850 token | Rasmiy hujjat, “Context window” sahifasidagi illyustratsiya (raqamlar loyihaga qarab o‘zgaradi) |
+| Illyustrativ oyna | 200 000 token | O‘sha sahifadagi simulyatsiya |
+| Bitta fayl o‘qish | 2 400 token | O‘sha sahifadagi misol |
+| MEMORY.md yuklanishi | Birinchi 200 qator yoki 25 KB | “How Claude Code works” va “Memory” sahifalari |
+| Kesh umri | Obunada bir soat; API kalit yoki bulut provayderida standart besh daqiqa | “Costs” sahifasi |
+| O‘rtacha xarajat | Faol kunda ~$13, oyiga $150–250; 90% foydalanuvchida faol kunda $30 dan kam | “Costs” sahifasi (korporativ joriy etishlar bo‘yicha) |
+| Amaliyot | `tekshir.py`: 8 tekshiruv; 22 mutatsiyaning hammasi ushlandi | Kurs amaliyoti, referens yechim bilan tekshirilgan |
+
+Bir token ≈ 3–4 belgi va “o‘rtacha fayl 2–4 ming token” — **taxminiy**
+qoida, tartibni tushunish uchun. Aniq raqam tokenizator, til va kod
+uslubiga bog‘liq; o‘z loyihangizdagi haqiqiy holatni `/context` ko‘rsatadi.
+3-bo‘limdagi sessiya — soddalashtirilgan va o‘zbekchalashtirilgan
+ko‘rinish; undagi tekshiruv chiqishlari amaliyot fayllarida haqiqatan
+ishga tushirib olingan. Ma’lumotlar 2026-yil oktyabr holatiga: Claude Code
+tez yangilanadi, interfeys yozuvlari o‘zgarishi mumkin.
+
+## 21. Manbalar
+
+- Claude Code hujjatlari: “How Claude Code works” — agent sikli, harness,
+  sessiyalar, checkpoint’lar (code.claude.com/docs/en/how-claude-code-works)
+- “Context window” — sessiya boshidagi yuklama va oynaning
+  to‘lishi (code.claude.com/docs/en/context-window)
+- “Best practices” — tekshiriladigan maqsad, kontekstni
+  boshqarish, besh xato naqsh (code.claude.com/docs/en/best-practices)
+- “Tools reference” — asboblar ro‘yxati va ruxsatlar
+  (code.claude.com/docs/en/tools-reference)
+- “Interactive mode” — klavishalar va kiritish prefikslari
+  (code.claude.com/docs/en/interactive-mode)
+- “Checkpointing” — rewind va uning cheklovlari
+  (code.claude.com/docs/en/checkpointing)
+- “Costs” — token, kesh va o‘rtacha xarajat
+  (code.claude.com/docs/en/costs)
+- “Permissions” — ruxsatlarni model emas, Claude Code ijro etishi
+  (code.claude.com/docs/en/permissions)
+
+<Callout type="maslahat" title="Keyingi qadam">
+Endi siz agent qanday “o‘ylashini” bilasiz. **2-darsda** Claude Code’ni
+o‘rnatasiz, qaysi muhit (terminal, IDE, desktop, web) sizga mos kelishini
+tanlaysiz va birinchi haqiqiy vazifani shu darsdagi qoidalar bilan
+bajarasiz: aniq vazifa, tekshiriladigan maqsad, dalil.
+</Callout>
